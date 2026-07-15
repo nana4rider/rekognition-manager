@@ -1,0 +1,32 @@
+FROM node:24-alpine AS dependencies
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/bff/package.json apps/bff/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+RUN npm ci --ignore-scripts
+
+FROM dependencies AS builder
+ENV BFF_ORIGIN=http://bff:3001
+WORKDIR /app
+COPY tsconfig.base.json ./
+COPY apps/web apps/web
+COPY packages/contracts packages/contracts
+RUN npm run build --workspace @rekognition-manager/contracts
+RUN npm run build --workspace @rekognition-manager/web
+
+FROM node:24-alpine AS runner
+ENV NODE_ENV=production
+ENV BFF_ORIGIN=http://bff:3001
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY apps/bff/package.json apps/bff/package.json
+COPY apps/web/package.json apps/web/package.json
+COPY packages/contracts/package.json packages/contracts/package.json
+RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
+COPY --from=builder /app/apps/web/.next apps/web/.next
+COPY --from=builder /app/apps/web/next.config.ts apps/web/next.config.ts
+COPY --from=builder /app/packages/contracts/dist packages/contracts/dist
+USER node
+EXPOSE 3000
+CMD ["npm", "run", "start", "--workspace", "@rekognition-manager/web"]

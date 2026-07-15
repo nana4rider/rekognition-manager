@@ -1,0 +1,30 @@
+services:
+  bff:
+    build:
+      context: .
+      dockerfile: Dockerfile.bff
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+    ports:
+      - '3001:3001'
+    healthcheck:
+      test: ['CMD', 'wget', '--quiet', '--tries=1', '--spider', 'http://127.0.0.1:3001/health']
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.web
+    environment:
+      BFF_ORIGIN: http://bff:3001
+    ports:
+      - '3000:3000'
+    depends_on:
+      bff:
+        condition: service_healthy

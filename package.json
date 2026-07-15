@@ -1,0 +1,34 @@
+{
+  "name": "rekognition-manager",
+  "version": "0.1.0",
+  "private": true,
+  "engines": {
+    "node": ">=24.0.0",
+    "npm": ">=11.0.0"
+  },
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "npm run build --workspace @rekognition-manager/contracts && concurrently --kill-others --names contracts,web,bff --prefix-colors yellow,blue,green \"npm run dev --workspace @rekognition-manager/contracts\" \"npm run dev --workspace @rekognition-manager/web\" \"npm run dev --workspace @rekognition-manager/bff\"",
+    "build": "npm run build --workspace @rekognition-manager/contracts && npm run build --workspace @rekognition-manager/bff && npm run build --workspace @rekognition-manager/web",
+    "lint": "eslint .",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "npm run build --workspace @rekognition-manager/contracts && npm run typecheck --workspaces --if-present",
+    "test": "npm run test --workspaces --if-present",
+    "prepare": "npm run build --workspace @rekognition-manager/contracts"
+  },
+  "devDependencies": {
+    "@eslint/js": "9.31.0",
+    "@types/node": "26.1.1",
+    "concurrently": "9.2.0",
+    "eslint": "9.31.0",
+    "eslint-config-prettier": "10.1.8",
+    "globals": "16.3.0",
+    "prettier": "3.6.2",
+    "typescript": "5.8.3",
+    "typescript-eslint": "8.38.0"
+  }
+}
