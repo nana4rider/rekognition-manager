@@ -11,7 +11,7 @@ Amazon Rekognitionのコレクション、ユーザー、顔を管理するWeb U
 - コレクションの一覧、作成、詳細、削除
 - ユーザーの一覧、作成、詳細、削除
 - 顔の一覧、画像からの登録、削除
-- ユーザーと顔の紐づけ、紐づけ解除
+- ユーザーと顔の関連付け、関連付け解除
 - 画像からのユーザー検索
 
 ## 構成
@@ -31,7 +31,7 @@ packages/
 - Node.js 24以上
 - npm 11以上
 - Amazon Rekognitionを利用できるAWSアカウント
-- Docker DesktopまたはDocker Engine（Dockerで起動する場合）
+- Docker DesktopまたはDocker Engine(Dockerで起動する場合)
 
 ## セットアップ
 

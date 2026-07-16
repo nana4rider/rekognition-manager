@@ -1,8 +1,9 @@
 {
   "name": "@rekognition-manager/web",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "nana4rider",
   "license": "ISC",
+  "private": true,
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
@@ -17,7 +18,7 @@
     "@mui/icons-material": "9.2.0",
     "@mui/material": "9.2.0",
     "@mui/material-nextjs": "9.1.1",
-    "@rekognition-manager/contracts": "0.4.0",
+    "@rekognition-manager/contracts": "*",
     "next": "16.2.10",
     "react": "19.2.7",
     "react-dom": "19.2.7",

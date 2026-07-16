@@ -242,7 +242,7 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
             <ImageDropZone file={file} disabled={busy} onSelect={selectFile} />
             {fileError && <FormHelperText error>{fileError}</FormHelperText>}
             <TextField
-              label="External Image ID（任意）"
+              label="External Image ID(任意)"
               value={externalImageId}
               onChange={(event) => {
                 setExternalImageId(event.target.value);
@@ -287,7 +287,7 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="顔を削除"
-        message={`Face ID「${deleteTarget?.faceId ?? ''}」を削除します。ユーザーとの紐づけも失われ、元に戻せません。`}
+        message={`Face ID「${deleteTarget?.faceId ?? ''}」を削除します。ユーザーとの関連付けも失われ、元に戻せません。`}
         busy={busy}
         onCancel={() => setDeleteTarget(undefined)}
         onConfirm={() => void deleteFace()}

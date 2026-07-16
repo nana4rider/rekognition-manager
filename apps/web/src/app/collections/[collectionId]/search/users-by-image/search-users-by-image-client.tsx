@@ -112,13 +112,13 @@ export function SearchUsersByImageClient({ collectionId }: { collectionId: strin
             disabled={busy}
             onSelect={selectFile}
             ariaLabel="検索画像を選択"
-            emptyLabel="検索する画像をドラッグ＆ドロップ"
+            emptyLabel="検索する画像をドラッグ&ドロップ"
           />
           {fileError && <FormHelperText error>{fileError}</FormHelperText>}
           <Stack direction={{ xs: 'column', sm: 'row' }} spacing={2}>
             <TextField
               type="number"
-              label="最低類似度（%）"
+              label="最低類似度(%)"
               value={userMatchThreshold}
               onChange={(event) => setUserMatchThreshold(event.target.value)}
               slotProps={{ htmlInput: { min: 0, max: 100, step: 0.1 } }}
@@ -153,7 +153,7 @@ export function SearchUsersByImageClient({ collectionId }: { collectionId: strin
             <Alert severity="info">
               画像内で最も大きい顔を検索に使用しました
               {result.unsearchedFaceCount > 0 &&
-                `（ほかに検索対象外の顔が${result.unsearchedFaceCount}件あります）`}
+                `(ほかに検索対象外の顔が${result.unsearchedFaceCount}件あります)`}
             </Alert>
           )}
           <TableContainer component={Paper} variant="outlined">
