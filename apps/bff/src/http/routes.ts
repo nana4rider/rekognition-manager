@@ -11,6 +11,8 @@ import {
   faceListQuerySchema,
   faceListResponseSchema,
   registerFaceResponseSchema,
+  searchUsersByImageOptionsSchema,
+  searchUsersByImageResponseSchema,
   userDetailResponseSchema,
   userIdSchema,
   userListQuerySchema,
@@ -204,6 +206,36 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
         image.type,
       );
       return context.json(registerFaceResponseSchema.parse(response), 201);
+    },
+  );
+
+  api.post(
+    '/collections/:collectionId/search/users-by-image',
+    zValidator('param', collectionParamsSchema, validationHook),
+    async (context) => {
+      const { collectionId } = context.req.valid('param');
+      const formData = await context.req.formData();
+      const image = formData.get('image');
+      if (!(image instanceof File)) {
+        throw new InvalidInputError('検索する顔画像を選択してください');
+      }
+      if (!SUPPORTED_IMAGE_TYPES.has(image.type)) {
+        throw new InvalidInputError('JPEGまたはPNG形式の画像を選択してください');
+      }
+      if (image.size === 0 || image.size > MAX_IMAGE_BYTES) {
+        throw new InvalidInputError('画像のサイズは1バイト以上5MB以下にしてください');
+      }
+      const options = searchUsersByImageOptionsSchema.parse({
+        userMatchThreshold: formData.get('userMatchThreshold') ?? undefined,
+        maxUsers: formData.get('maxUsers') ?? undefined,
+      });
+      const response = await createService(context.get('logger')).searchUsersByImage(
+        collectionId,
+        new Uint8Array(await image.arrayBuffer()),
+        options.userMatchThreshold,
+        options.maxUsers,
+      );
+      return context.json(searchUsersByImageResponseSchema.parse(response));
     },
   );
 

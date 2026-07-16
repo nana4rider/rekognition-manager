@@ -1,5 +1,9 @@
 # Rekognition Manager
 
+[![License: ISC](https://img.shields.io/github/license/nana4rider/rekognition-manager)](LICENSE)
+![GitHub Actions Test](https://github.com/nana4rider/rekognition-manager/actions/workflows/test.yml/badge.svg)
+![GitHub Actions Release](https://github.com/nana4rider/rekognition-manager/actions/workflows/release.yml/badge.svg)
+
 Amazon Rekognitionのコレクション、ユーザー、顔を管理するWeb UIです。
 
 ## 現在の機能
@@ -8,10 +12,7 @@ Amazon Rekognitionのコレクション、ユーザー、顔を管理するWeb U
 - ユーザーの一覧、作成、詳細、削除
 - 顔の一覧、画像からの登録、削除
 - ユーザーと顔の紐づけ、紐づけ解除
-- 入力値の検証と統一されたAPIエラー
-- Request ID付きの構造化ログ
-
-初期バージョンではOIDC認証、S3への元画像保存、DB、`SearchUsersByImage`は実装していません。
+- 画像からのユーザー検索
 
 ## 構成
 
@@ -82,7 +83,8 @@ AWS_SECRET_ACCESS_KEY=your-secret-access-key
         "rekognition:DeleteFaces",
         "rekognition:ListFaces",
         "rekognition:AssociateFaces",
-        "rekognition:DisassociateFaces"
+        "rekognition:DisassociateFaces",
+        "rekognition:SearchUsersByImage"
       ],
       "Resource": [
         "arn:aws:s3:::your-bucket-name/*",
@@ -168,15 +170,14 @@ DELETE /api/v1/collections/:collectionId/faces/:faceId
 
 POST   /api/v1/collections/:collectionId/users/:userId/faces
 DELETE /api/v1/collections/:collectionId/users/:userId/faces/:faceId
+
+POST   /api/v1/collections/:collectionId/search/users-by-image
 ```
 
 顔登録は`multipart/form-data`で`image`と任意の`externalImageId`を送信します。対応形式はJPEGとPNG、上限は5MBです。元画像は保存しません。
 
-## ログ
+画像検索は`multipart/form-data`で`image`、任意の`userMatchThreshold`と`maxUsers`を送信します。検索画像は保存しません。
 
-- 開発環境: `pino-pretty`による読みやすい表示
-- 本番環境: JSONを標準出力
-- Request ID、HTTPステータス、処理時間、AWS操作名を記録
-- AWS認証情報、Cookie、OIDCトークン、顔画像は記録しない
+## その他
 
 設計上の判断は[docs/adr](docs/adr)に記録します。

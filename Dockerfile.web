@@ -18,15 +18,11 @@ RUN npm run build --workspace @rekognition-manager/web
 FROM node:24-alpine AS runner
 ENV NODE_ENV=production
 ENV BFF_ORIGIN=http://bff:3001
+ENV HOSTNAME=0.0.0.0
+ENV PORT=3000
 WORKDIR /app
-COPY package.json package-lock.json ./
-COPY apps/bff/package.json apps/bff/package.json
-COPY apps/web/package.json apps/web/package.json
-COPY packages/contracts/package.json packages/contracts/package.json
-RUN npm ci --omit=dev --ignore-scripts && npm cache clean --force
-COPY --from=builder /app/apps/web/.next apps/web/.next
-COPY --from=builder /app/apps/web/next.config.ts apps/web/next.config.ts
-COPY --from=builder /app/packages/contracts/dist packages/contracts/dist
+COPY --from=builder --chown=node:node /app/apps/web/.next/standalone ./
+COPY --from=builder --chown=node:node /app/apps/web/.next/static ./apps/web/.next/static
 USER node
 EXPOSE 3000
-CMD ["npm", "run", "start", "--workspace", "@rekognition-manager/web"]
+CMD ["node", "apps/web/server.js"]

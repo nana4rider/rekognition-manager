@@ -3,6 +3,7 @@ import type {
   Collection,
   FaceListResponse,
   RegisterFaceResponse,
+  SearchUsersByImageResponse,
   UserDetailResponse,
   UserListResponse,
 } from '@rekognition-manager/contracts';
@@ -73,6 +74,20 @@ export class RekognitionService {
     };
     if (externalImageId) input.externalImageId = externalImageId;
     return this.repository.registerFace(input);
+  }
+
+  searchUsersByImage(
+    collectionId: string,
+    bytes: Uint8Array,
+    userMatchThreshold: number,
+    maxUsers: number,
+  ): Promise<SearchUsersByImageResponse> {
+    return this.repository.searchUsersByImage({
+      collectionId,
+      bytes,
+      userMatchThreshold,
+      maxUsers,
+    });
   }
 
   async deleteFace(collectionId: string, faceId: string): Promise<void> {

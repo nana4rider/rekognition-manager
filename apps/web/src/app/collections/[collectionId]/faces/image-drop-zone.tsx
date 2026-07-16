@@ -8,9 +8,17 @@ type ImageDropZoneProps = {
   file: File | undefined;
   disabled?: boolean;
   onSelect: (file?: File) => void;
+  ariaLabel?: string;
+  emptyLabel?: string;
 };
 
-export function ImageDropZone({ file, disabled = false, onSelect }: ImageDropZoneProps) {
+export function ImageDropZone({
+  file,
+  disabled = false,
+  onSelect,
+  ariaLabel = '顔画像を選択',
+  emptyLabel = '画像をドラッグ＆ドロップ',
+}: ImageDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
 
@@ -36,7 +44,7 @@ export function ImageDropZone({ file, disabled = false, onSelect }: ImageDropZon
       role="button"
       tabIndex={disabled ? -1 : 0}
       aria-disabled={disabled}
-      aria-label="顔画像を選択"
+      aria-label={ariaLabel}
       onClick={openFilePicker}
       onKeyDown={handleKeyDown}
       onDragEnter={(event) => {
@@ -80,7 +88,7 @@ export function ImageDropZone({ file, disabled = false, onSelect }: ImageDropZon
       />
       <Stack spacing={1} sx={{ alignItems: 'center' }}>
         <AddPhotoAlternateIcon color={dragging ? 'primary' : 'inherit'} />
-        <Typography sx={{ fontWeight: 500 }}>{file?.name ?? '画像をドラッグ＆ドロップ'}</Typography>
+        <Typography sx={{ fontWeight: 500 }}>{file?.name ?? emptyLabel}</Typography>
         <Typography variant="body2" color="text.secondary">
           またはクリックして選択（JPEG／PNG、5MB以下）
         </Typography>

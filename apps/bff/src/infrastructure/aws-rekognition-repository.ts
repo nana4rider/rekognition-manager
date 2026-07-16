@@ -17,6 +17,7 @@ import {
   ListCollectionsCommand,
   ListFacesCommand,
   ListUsersCommand,
+  SearchUsersByImageCommand,
   type RekognitionClient,
 } from '@aws-sdk/client-rekognition';
 import type {
@@ -24,6 +25,7 @@ import type {
   Collection,
   Face,
   RegisterFaceResponse,
+  SearchUsersByImageResponse,
   User,
 } from '@rekognition-manager/contracts';
 
@@ -32,6 +34,7 @@ import type {
   Page,
   RegisterFaceInput,
   RekognitionRepository,
+  SearchUsersByImageInput,
 } from '../application/rekognition-repository.js';
 import { mapAwsError } from './aws-error.js';
 import { decodeCursor, encodeCursor } from './cursor.js';
@@ -234,6 +237,34 @@ export class AwsRekognitionRepository implements RekognitionRepository {
       faces,
       unindexedFaceCount: response.UnindexedFaces?.length ?? 0,
     };
+  }
+
+  async searchUsersByImage(input: SearchUsersByImageInput): Promise<SearchUsersByImageResponse> {
+    const response = await this.execute('SearchUsersByImage', () =>
+      this.client.send(
+        new SearchUsersByImageCommand({
+          CollectionId: input.collectionId,
+          Image: { Bytes: input.bytes },
+          UserMatchThreshold: input.userMatchThreshold,
+          MaxUsers: input.maxUsers,
+          QualityFilter: 'AUTO',
+        }),
+      ),
+    );
+    const result: SearchUsersByImageResponse = {
+      matches: (response.UserMatches ?? []).flatMap((match) => {
+        if (!match.User?.UserId || match.Similarity === undefined) return [];
+        const item: SearchUsersByImageResponse['matches'][number] = {
+          userId: match.User.UserId,
+          similarity: match.Similarity,
+        };
+        if (match.User.UserStatus) item.userStatus = match.User.UserStatus;
+        return [item];
+      }),
+      searchedFaceFound: response.SearchedFace !== undefined,
+      unsearchedFaceCount: response.UnsearchedFaces?.length ?? 0,
+    };
+    return result;
   }
 
   async deleteFace(collectionId: string, faceId: string): Promise<void> {

@@ -3,6 +3,7 @@ import type {
   Collection,
   Face,
   RegisterFaceResponse,
+  SearchUsersByImageResponse,
   User,
 } from '@rekognition-manager/contracts';
 
@@ -16,6 +17,13 @@ export interface RegisterFaceInput {
   bytes: Uint8Array;
   externalImageId?: string;
   contentType?: string;
+}
+
+export interface SearchUsersByImageInput {
+  collectionId: string;
+  bytes: Uint8Array;
+  userMatchThreshold: number;
+  maxUsers: number;
 }
 
 export interface RekognitionRepository {
@@ -36,6 +44,7 @@ export interface RekognitionRepository {
     userId?: string,
   ): Promise<Page<Face>>;
   registerFace(input: RegisterFaceInput): Promise<RegisterFaceResponse>;
+  searchUsersByImage(input: SearchUsersByImageInput): Promise<SearchUsersByImageResponse>;
   deleteFace(collectionId: string, faceId: string): Promise<void>;
   getFaceImage(
     collectionId: string,
