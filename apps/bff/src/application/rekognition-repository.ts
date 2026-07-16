@@ -15,6 +15,7 @@ export interface RegisterFaceInput {
   collectionId: string;
   bytes: Uint8Array;
   externalImageId?: string;
+  contentType?: string;
 }
 
 export interface RekognitionRepository {
@@ -36,6 +37,13 @@ export interface RekognitionRepository {
   ): Promise<Page<Face>>;
   registerFace(input: RegisterFaceInput): Promise<RegisterFaceResponse>;
   deleteFace(collectionId: string, faceId: string): Promise<void>;
+  getFaceImage(
+    collectionId: string,
+    faceId: string,
+  ): Promise<{
+    contentType: string;
+    body: Uint8Array;
+  } | null>;
 
   associateFaces(
     collectionId: string,

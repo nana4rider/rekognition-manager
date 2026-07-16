@@ -1,3 +1,4 @@
+import { S3Client } from '@aws-sdk/client-s3';
 import { RekognitionClient } from '@aws-sdk/client-rekognition';
 import { serve } from '@hono/node-server';
 
@@ -10,9 +11,13 @@ import { createRootLogger } from './infrastructure/pino-logger.js';
 const config = loadConfig();
 const rootLogger = createRootLogger(config);
 const client = new RekognitionClient({ region: config.AWS_REGION });
+const s3Client = new S3Client({ region: config.AWS_REGION });
 const app = createApp(
   rootLogger,
-  (requestLogger) => new RekognitionService(new AwsRekognitionRepository(client, requestLogger)),
+  (requestLogger) =>
+    new RekognitionService(
+      new AwsRekognitionRepository(client, requestLogger, s3Client, config.FACE_IMAGE_BUCKET_NAME),
+    ),
 );
 
 const server = serve({ fetch: app.fetch, port: config.PORT }, (info) => {
@@ -23,6 +28,7 @@ function shutdown(signal: string) {
   rootLogger.info({ signal }, 'BFF shutting down');
   server.close((error) => {
     client.destroy();
+    s3Client.destroy();
     if (error) {
       rootLogger.error({ err: error }, 'BFF shutdown failed');
       process.exitCode = 1;

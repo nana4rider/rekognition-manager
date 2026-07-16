@@ -2,10 +2,14 @@
 
 import LinkOffIcon from '@mui/icons-material/LinkOff';
 import LinkIcon from '@mui/icons-material/Link';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Box,
   Button,
+  Dialog,
+  DialogContent,
+  DialogTitle,
   Checkbox,
   Chip,
   CircularProgress,
@@ -50,6 +54,7 @@ export function UserDetailClient({
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string>();
+  const [previewFace, setPreviewFace] = useState<Face>();
   const root = `/api/v1/collections/${encodeURIComponent(collectionId)}`;
 
   const load = useCallback(async () => {
@@ -202,19 +207,50 @@ export function UserDetailClient({
                 <TableCell sx={{ fontFamily: 'monospace' }}>{face.faceId}</TableCell>
                 <TableCell>{face.externalImageId ?? '—'}</TableCell>
                 <TableCell align="right">
-                  <Button
-                    color="error"
-                    startIcon={<LinkOffIcon />}
-                    onClick={() => setUnlinkTarget(face)}
-                  >
-                    紐づけ解除
-                  </Button>
+                  <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end' }}>
+                    <Button
+                      color="primary"
+                      startIcon={<VisibilityIcon />}
+                      onClick={() => setPreviewFace(face)}
+                    >
+                      画像を見る
+                    </Button>
+                    <Button
+                      color="error"
+                      startIcon={<LinkOffIcon />}
+                      onClick={() => setUnlinkTarget(face)}
+                    >
+                      紐づけ解除
+                    </Button>
+                  </Stack>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
       </TableContainer>
+      <Dialog
+        open={Boolean(previewFace)}
+        onClose={() => setPreviewFace(undefined)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>顔画像</DialogTitle>
+        <DialogContent>
+          {previewFace && (
+            <Stack spacing={2} sx={{ py: 1, alignItems: 'center' }}>
+              <img
+                src={`${root}/faces/${encodeURIComponent(previewFace.faceId)}/image`}
+                alt={`Face ${previewFace.faceId}`}
+                style={{ maxWidth: '100%', maxHeight: 480, objectFit: 'contain' }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {previewFace.faceId}
+              </Typography>
+            </Stack>
+          )}
+        </DialogContent>
+      </Dialog>
       <ConfirmDialog
         open={Boolean(unlinkTarget)}
         title="顔の紐づけを解除"
