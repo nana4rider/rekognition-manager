@@ -10,6 +10,7 @@ import {
   DialogActions,
   DialogContent,
   DialogTitle,
+  FormHelperText,
   IconButton,
   LinearProgress,
   Paper,
@@ -34,6 +35,7 @@ import { useCallback, useEffect, useState } from 'react';
 
 import { ConfirmDialog } from '../../../../components/confirm-dialog';
 import { apiDelete, apiRequest, errorMessage } from '../../../../lib/api';
+import { ImageDropZone } from './image-drop-zone';
 
 const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -45,10 +47,31 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
   const [registerOpen, setRegisterOpen] = useState(false);
   const [file, setFile] = useState<File>();
   const [externalImageId, setExternalImageId] = useState('');
+  const [fileError, setFileError] = useState<string>();
   const [fieldError, setFieldError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Face>();
   const base = `/api/v1/collections/${encodeURIComponent(collectionId)}/faces`;
+
+  function selectFile(selectedFile?: File) {
+    if (!selectedFile) {
+      setFile(undefined);
+      setFileError(undefined);
+      return;
+    }
+    if (!['image/jpeg', 'image/png'].includes(selectedFile.type)) {
+      setFile(undefined);
+      setFileError('JPEGまたはPNG形式の画像を選択してください');
+      return;
+    }
+    if (selectedFile.size === 0 || selectedFile.size > MAX_IMAGE_BYTES) {
+      setFile(undefined);
+      setFileError('画像のサイズは1バイト以上5MB以下にしてください');
+      return;
+    }
+    setFile(selectedFile);
+    setFileError(undefined);
+  }
 
   const load = useCallback(
     async (cursor?: string) => {
@@ -74,15 +97,15 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
 
   async function registerFace() {
     if (!file) {
-      setFieldError('顔画像を選択してください');
+      setFileError('顔画像を選択してください');
       return;
     }
     if (!['image/jpeg', 'image/png'].includes(file.type)) {
-      setFieldError('JPEGまたはPNG形式の画像を選択してください');
+      setFileError('JPEGまたはPNG形式の画像を選択してください');
       return;
     }
     if (file.size === 0 || file.size > MAX_IMAGE_BYTES) {
-      setFieldError('画像のサイズは1バイト以上5MB以下にしてください');
+      setFileError('画像のサイズは1バイト以上5MB以下にしてください');
       return;
     }
     const parsedId = externalImageIdSchema.safeParse(externalImageId || undefined);
@@ -103,6 +126,8 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
       setRegisterOpen(false);
       setFile(undefined);
       setExternalImageId('');
+      setFileError(undefined);
+      setFieldError(undefined);
       await load();
     } catch (caught) {
       setError(errorMessage(caught));
@@ -207,18 +232,8 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
         <DialogTitle>顔を登録</DialogTitle>
         <DialogContent>
           <Stack spacing={2} sx={{ mt: 1 }}>
-            <Button component="label" variant="outlined" startIcon={<AddPhotoAlternateIcon />}>
-              {file?.name ?? 'JPEGまたはPNGを選択'}
-              <input
-                hidden
-                type="file"
-                accept="image/jpeg,image/png"
-                onChange={(event) => {
-                  setFile(event.target.files?.[0]);
-                  setFieldError(undefined);
-                }}
-              />
-            </Button>
+            <ImageDropZone file={file} disabled={busy} onSelect={selectFile} />
+            {fileError && <FormHelperText error>{fileError}</FormHelperText>}
             <TextField
               label="External Image ID（任意）"
               value={externalImageId}
