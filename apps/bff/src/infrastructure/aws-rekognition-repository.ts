@@ -215,13 +215,12 @@ export class AwsRekognitionRepository implements RekognitionRepository {
     if (this.s3Client && this.imageBucketName && input.contentType) {
       const createdFace = faces[0];
       if (createdFace) {
-        const s3Send = (
-          this.s3Client as unknown as { send: (command: unknown) => Promise<unknown> }
-        ).send;
+        const bucketName = this.imageBucketName;
+        if (!bucketName) return { faces, unindexedFaceCount: response.UnindexedFaces?.length ?? 0 };
         await this.execute('PutObject', async () => {
-          await s3Send(
+          await this.s3Client!.send(
             new PutObjectCommand({
-              Bucket: this.imageBucketName,
+              Bucket: bucketName,
               Key: this.getImageObjectKey(input.collectionId, createdFace.faceId),
               Body: input.bytes,
               ContentType: input.contentType,
@@ -242,13 +241,13 @@ export class AwsRekognitionRepository implements RekognitionRepository {
       this.client.send(new DeleteFacesCommand({ CollectionId: collectionId, FaceIds: [faceId] })),
     );
     if (!this.s3Client || !this.imageBucketName) return;
+    const bucketName = this.imageBucketName;
+    if (!bucketName) return;
     try {
-      const s3Send = (this.s3Client as unknown as { send: (command: unknown) => Promise<unknown> })
-        .send;
       await this.execute('DeleteObject', async () => {
-        await s3Send(
+        await this.s3Client!.send(
           new DeleteObjectCommand({
-            Bucket: this.imageBucketName,
+            Bucket: bucketName,
             Key: this.getImageObjectKey(collectionId, faceId),
           }),
         );
@@ -269,13 +268,13 @@ export class AwsRekognitionRepository implements RekognitionRepository {
     body: Uint8Array;
   } | null> {
     if (!this.s3Client || !this.imageBucketName) return null;
+    const bucketName = this.imageBucketName;
+    if (!bucketName) return null;
     try {
-      const s3Send = (this.s3Client as unknown as { send: (command: unknown) => Promise<unknown> })
-        .send;
       const response = await this.execute('GetObject', async () => {
-        return (await s3Send(
+        return (await this.s3Client!.send(
           new GetObjectCommand({
-            Bucket: this.imageBucketName,
+            Bucket: bucketName,
             Key: this.getImageObjectKey(collectionId, faceId),
           }),
         )) as {
