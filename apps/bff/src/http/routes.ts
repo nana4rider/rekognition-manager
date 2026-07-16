@@ -201,8 +201,25 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
         collectionId,
         new Uint8Array(await image.arrayBuffer()),
         externalImageId,
+        image.type,
       );
       return context.json(registerFaceResponseSchema.parse(response), 201);
+    },
+  );
+
+  api.get(
+    '/collections/:collectionId/faces/:faceId/image',
+    zValidator('param', faceParamsSchema, validationHook),
+    async (context) => {
+      const { collectionId, faceId } = context.req.valid('param');
+      const image = await createService(context.get('logger')).getFaceImage(collectionId, faceId);
+      if (!image) {
+        return context.body(null, 404);
+      }
+      return context.body(image.body, 200, {
+        'Content-Type': image.contentType,
+        'Cache-Control': 'private, no-store',
+      });
     },
   );
 

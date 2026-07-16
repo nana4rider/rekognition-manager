@@ -56,6 +56,45 @@ AWS_SECRET_ACCESS_KEY=your-secret-access-key
 
 `.env`はGitの管理対象外です。認証情報をコミットしないでください。
 
+### IAMの最小権限例
+
+顔登録・一覧・削除と S3 画像保存/参照を行うための IAM ポリシー例です。ユーザー名、バケット名、リージョン、アカウント ID は実際の値へ置き換えてください。
+
+```json
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "FaceImageAndRekognitionAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:PutObject",
+        "s3:GetObject",
+        "s3:DeleteObject",
+        "rekognition:CreateCollection",
+        "rekognition:DeleteCollection",
+        "rekognition:DescribeCollection",
+        "rekognition:ListCollections",
+        "rekognition:CreateUser",
+        "rekognition:DeleteUser",
+        "rekognition:ListUsers",
+        "rekognition:IndexFaces",
+        "rekognition:DeleteFaces",
+        "rekognition:ListFaces",
+        "rekognition:AssociateFaces",
+        "rekognition:DisassociateFaces"
+      ],
+      "Resource": [
+        "arn:aws:s3:::your-bucket-name/*",
+        "arn:aws:rekognition:ap-northeast-1:123456789012:collection/*"
+      ]
+    }
+  ]
+}
+```
+
+このポリシーでは、顔画像用の S3 バケットへオブジェクトの保存・取得・削除と、Rekognition のコレクション・ユーザー・顔操作を許可します。動作確認用のローカル開発では、実運用前提よりも権限を絞った IAM ユーザーを使うことを推奨します。
+
 ## ローカル起動
 
 Web、BFF、共有契約のwatchビルドをまとめて起動します。

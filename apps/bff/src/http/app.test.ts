@@ -20,6 +20,7 @@ function createRepository(overrides: Partial<RekognitionRepository> = {}): Rekog
     listFaces: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
     registerFace: vi.fn().mockResolvedValue({ faces: [], unindexedFaceCount: 0 }),
     deleteFace: vi.fn().mockResolvedValue(undefined),
+    getFaceImage: vi.fn().mockResolvedValue(null),
     associateFaces: vi
       .fn()
       .mockResolvedValue({ associatedFaceIds: [], unsuccessful: [], userStatus: 'ACTIVE' }),

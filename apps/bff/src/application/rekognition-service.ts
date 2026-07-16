@@ -63,11 +63,13 @@ export class RekognitionService {
     collectionId: string,
     bytes: Uint8Array,
     externalImageId?: string,
+    contentType?: string,
   ): Promise<RegisterFaceResponse> {
-    const input = { collectionId, bytes } as {
+    const input = { collectionId, bytes, contentType } as {
       collectionId: string;
       bytes: Uint8Array;
       externalImageId?: string;
+      contentType?: string;
     };
     if (externalImageId) input.externalImageId = externalImageId;
     return this.repository.registerFace(input);
@@ -75,6 +77,10 @@ export class RekognitionService {
 
   async deleteFace(collectionId: string, faceId: string): Promise<void> {
     await this.repository.deleteFace(collectionId, faceId);
+  }
+
+  getFaceImage(collectionId: string, faceId: string) {
+    return this.repository.getFaceImage(collectionId, faceId);
   }
 
   associateFaces(

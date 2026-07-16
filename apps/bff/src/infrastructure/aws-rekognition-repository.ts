@@ -1,4 +1,10 @@
 import {
+  DeleteObjectCommand,
+  GetObjectCommand,
+  PutObjectCommand,
+  type S3Client,
+} from '@aws-sdk/client-s3';
+import {
   AssociateFacesCommand,
   CreateCollectionCommand,
   CreateUserCommand,
@@ -34,7 +40,13 @@ export class AwsRekognitionRepository implements RekognitionRepository {
   constructor(
     private readonly client: RekognitionClient,
     private readonly logger: Logger,
+    private readonly s3Client?: S3Client,
+    private readonly imageBucketName?: string,
   ) {}
+
+  private getImageObjectKey(collectionId: string, faceId: string): string {
+    return `${collectionId}/${faceId}`;
+  }
 
   private async execute<T>(operation: string, action: () => Promise<T>): Promise<T> {
     const startedAt = performance.now();
@@ -191,16 +203,35 @@ export class AwsRekognitionRepository implements RekognitionRepository {
         }),
       ),
     );
+    const faces = (response.FaceRecords ?? []).flatMap((record) => {
+      const item = record.Face;
+      if (!item?.FaceId) return [];
+      const face: Face = { faceId: item.FaceId };
+      if (item.ImageId) face.imageId = item.ImageId;
+      if (item.ExternalImageId) face.externalImageId = item.ExternalImageId;
+      if (item.Confidence !== undefined) face.confidence = item.Confidence;
+      return [face];
+    });
+    if (this.s3Client && this.imageBucketName && input.contentType) {
+      const createdFace = faces[0];
+      if (createdFace) {
+        const bucketName = this.imageBucketName;
+        if (!bucketName) return { faces, unindexedFaceCount: response.UnindexedFaces?.length ?? 0 };
+        await this.execute('PutObject', async () => {
+          await this.s3Client!.send(
+            new PutObjectCommand({
+              Bucket: bucketName,
+              Key: this.getImageObjectKey(input.collectionId, createdFace.faceId),
+              Body: input.bytes,
+              ContentType: input.contentType,
+              CacheControl: 'private, no-store',
+            }),
+          );
+        });
+      }
+    }
     return {
-      faces: (response.FaceRecords ?? []).flatMap((record) => {
-        const item = record.Face;
-        if (!item?.FaceId) return [];
-        const face: Face = { faceId: item.FaceId };
-        if (item.ImageId) face.imageId = item.ImageId;
-        if (item.ExternalImageId) face.externalImageId = item.ExternalImageId;
-        if (item.Confidence !== undefined) face.confidence = item.Confidence;
-        return [face];
-      }),
+      faces,
       unindexedFaceCount: response.UnindexedFaces?.length ?? 0,
     };
   }
@@ -209,6 +240,64 @@ export class AwsRekognitionRepository implements RekognitionRepository {
     await this.execute('DeleteFaces', () =>
       this.client.send(new DeleteFacesCommand({ CollectionId: collectionId, FaceIds: [faceId] })),
     );
+    if (!this.s3Client || !this.imageBucketName) return;
+    const bucketName = this.imageBucketName;
+    if (!bucketName) return;
+    try {
+      await this.execute('DeleteObject', async () => {
+        await this.s3Client!.send(
+          new DeleteObjectCommand({
+            Bucket: bucketName,
+            Key: this.getImageObjectKey(collectionId, faceId),
+          }),
+        );
+      });
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'NoSuchKey' || error.name === 'NotFound')) {
+        return;
+      }
+      throw error;
+    }
+  }
+
+  async getFaceImage(
+    collectionId: string,
+    faceId: string,
+  ): Promise<{
+    contentType: string;
+    body: Uint8Array;
+  } | null> {
+    if (!this.s3Client || !this.imageBucketName) return null;
+    const bucketName = this.imageBucketName;
+    if (!bucketName) return null;
+    try {
+      const response = await this.execute('GetObject', async () => {
+        return (await this.s3Client!.send(
+          new GetObjectCommand({
+            Bucket: bucketName,
+            Key: this.getImageObjectKey(collectionId, faceId),
+          }),
+        )) as {
+          Body?: AsyncIterable<Uint8Array>;
+          ContentType?: string;
+        };
+      });
+      const chunks: Uint8Array[] = [];
+      if (response.Body) {
+        for await (const chunk of response.Body) {
+          chunks.push(chunk);
+        }
+      }
+      return {
+        contentType: response.ContentType ?? 'application/octet-stream',
+        body: Buffer.concat(chunks),
+      };
+    } catch (error) {
+      if (error instanceof Error && (error.name === 'NoSuchKey' || error.name === 'NotFound')) {
+        return null;
+      }
+      throw error;
+    }
   }
 
   async associateFaces(

@@ -1,8 +1,9 @@
 services:
   bff:
-    build:
-      context: .
-      dockerfile: Dockerfile.bff
+    image: ghcr.io/nana4rider/rekognition-manager/bff:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.bff
     env_file:
       - path: .env
         required: false
@@ -18,9 +19,10 @@ services:
       retries: 3
 
   web:
-    build:
-      context: .
-      dockerfile: Dockerfile.web
+    image: ghcr.io/nana4rider/rekognition-manager/web:latest
+    # build:
+    #   context: .
+    #   dockerfile: Dockerfile.web
     environment:
       BFF_ORIGIN: http://bff:3001
     ports:

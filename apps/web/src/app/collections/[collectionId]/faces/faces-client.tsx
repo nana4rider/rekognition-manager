@@ -2,6 +2,7 @@
 
 import AddPhotoAlternateIcon from '@mui/icons-material/AddPhotoAlternate';
 import DeleteOutlineIcon from '@mui/icons-material/DeleteOutlined';
+import VisibilityIcon from '@mui/icons-material/Visibility';
 import {
   Alert,
   Button,
@@ -51,6 +52,7 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
   const [fieldError, setFieldError] = useState<string>();
   const [busy, setBusy] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState<Face>();
+  const [previewFace, setPreviewFace] = useState<Face>();
   const base = `/api/v1/collections/${encodeURIComponent(collectionId)}/faces`;
 
   function selectFile(selectedFile?: File) {
@@ -204,6 +206,11 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
                   {face.confidence !== undefined ? `${face.confidence.toFixed(1)}%` : '—'}
                 </TableCell>
                 <TableCell align="right">
+                  <Tooltip title="画像を見る">
+                    <IconButton color="primary" onClick={() => setPreviewFace(face)}>
+                      <VisibilityIcon />
+                    </IconButton>
+                  </Tooltip>
                   <Tooltip title="削除">
                     <IconButton color="error" onClick={() => setDeleteTarget(face)}>
                       <DeleteOutlineIcon />
@@ -254,6 +261,28 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
             登録する
           </Button>
         </DialogActions>
+      </Dialog>
+      <Dialog
+        open={Boolean(previewFace)}
+        onClose={() => setPreviewFace(undefined)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>顔画像</DialogTitle>
+        <DialogContent>
+          {previewFace && (
+            <Stack spacing={2} sx={{ py: 1, alignItems: 'center' }}>
+              <img
+                src={`/api/v1/collections/${encodeURIComponent(collectionId)}/faces/${encodeURIComponent(previewFace.faceId)}/image`}
+                alt={`Face ${previewFace.faceId}`}
+                style={{ maxWidth: '100%', maxHeight: 480, objectFit: 'contain' }}
+              />
+              <Typography variant="body2" color="text.secondary">
+                {previewFace.faceId}
+              </Typography>
+            </Stack>
+          )}
+        </DialogContent>
       </Dialog>
       <ConfirmDialog
         open={Boolean(deleteTarget)}
