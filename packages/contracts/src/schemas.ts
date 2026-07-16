@@ -78,6 +78,21 @@ export const registerFaceResponseSchema = z.object({
   unindexedFaceCount: z.number().int().nonnegative(),
 });
 
+export const searchUsersByImageOptionsSchema = z.object({
+  userMatchThreshold: z.coerce.number().min(0).max(100).default(80),
+  maxUsers: z.coerce.number().int().min(1).max(500).default(10),
+});
+export const userImageMatchSchema = z.object({
+  userId: userIdSchema,
+  userStatus: userStatusSchema.optional(),
+  similarity: z.number().min(0).max(100),
+});
+export const searchUsersByImageResponseSchema = z.object({
+  matches: z.array(userImageMatchSchema),
+  searchedFaceFound: z.boolean(),
+  unsearchedFaceCount: z.number().int().nonnegative(),
+});
+
 export const associateFacesRequestSchema = z.object({
   faceIds: z.array(faceIdSchema).min(1).max(100),
   userMatchThreshold: z.number().min(0).max(100).optional(),
@@ -115,6 +130,9 @@ export type UserDetailResponse = z.infer<typeof userDetailResponseSchema>;
 export type Face = z.infer<typeof faceSchema>;
 export type FaceListResponse = z.infer<typeof faceListResponseSchema>;
 export type RegisterFaceResponse = z.infer<typeof registerFaceResponseSchema>;
+export type SearchUsersByImageOptions = z.infer<typeof searchUsersByImageOptionsSchema>;
+export type SearchUsersByImageResponse = z.infer<typeof searchUsersByImageResponseSchema>;
+export type UserImageMatch = z.infer<typeof userImageMatchSchema>;
 export type AssociateFacesRequest = z.infer<typeof associateFacesRequestSchema>;
 export type AssociateFacesResponse = z.infer<typeof associateFacesResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;

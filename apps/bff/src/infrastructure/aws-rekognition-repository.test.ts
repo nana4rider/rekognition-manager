@@ -3,6 +3,7 @@ import {
   DeleteFacesCommand,
   IndexFacesCommand,
   ListCollectionsCommand,
+  SearchUsersByImageCommand,
   type RekognitionClient,
 } from '@aws-sdk/client-rekognition';
 import { describe, expect, it, vi } from 'vitest';
@@ -103,5 +104,38 @@ describe('AwsRekognitionRepository', () => {
     await repository.deleteFace('employees', 'face-123');
 
     expect(send).toHaveBeenCalled();
+  });
+
+  it('画像検索結果をアプリケーション形式へ変換する', async () => {
+    const send = vi.fn().mockResolvedValue({
+      UserMatches: [{ User: { UserId: 'user-001', UserStatus: 'ACTIVE' }, Similarity: 98.5 }],
+      SearchedFace: { FaceDetails: {} },
+      UnsearchedFaces: [{}],
+    });
+    const repository = new AwsRekognitionRepository(
+      { send } as unknown as RekognitionClient,
+      logger,
+    );
+
+    const result = await repository.searchUsersByImage({
+      collectionId: 'employees',
+      bytes: Uint8Array.from([1, 2, 3]),
+      userMatchThreshold: 90,
+      maxUsers: 5,
+    });
+
+    const command = send.mock.calls[0]?.[0] as SearchUsersByImageCommand;
+    expect(command).toBeInstanceOf(SearchUsersByImageCommand);
+    expect(command.input).toMatchObject({
+      CollectionId: 'employees',
+      UserMatchThreshold: 90,
+      MaxUsers: 5,
+      QualityFilter: 'AUTO',
+    });
+    expect(result).toEqual({
+      matches: [{ userId: 'user-001', userStatus: 'ACTIVE', similarity: 98.5 }],
+      searchedFaceFound: true,
+      unsearchedFaceCount: 1,
+    });
   });
 });

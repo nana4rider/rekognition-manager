@@ -19,6 +19,9 @@ function createRepository(overrides: Partial<RekognitionRepository> = {}): Rekog
     deleteUser: vi.fn().mockResolvedValue(undefined),
     listFaces: vi.fn().mockResolvedValue({ items: [], nextCursor: null }),
     registerFace: vi.fn().mockResolvedValue({ faces: [], unindexedFaceCount: 0 }),
+    searchUsersByImage: vi
+      .fn()
+      .mockResolvedValue({ matches: [], searchedFaceFound: false, unsearchedFaceCount: 0 }),
     deleteFace: vi.fn().mockResolvedValue(undefined),
     getFaceImage: vi.fn().mockResolvedValue(null),
     associateFaces: vi
@@ -69,6 +72,38 @@ describe('BFF API', () => {
     expect(response.status).toBe(404);
     expect((await response.json()) as { error: { code: string } }).toMatchObject({
       error: { code: 'RESOURCE_NOT_FOUND' },
+    });
+  });
+
+  it('画像からユーザーを検索する', async () => {
+    const searchUsersByImage = vi.fn().mockResolvedValue({
+      matches: [{ userId: 'user-001', userStatus: 'ACTIVE', similarity: 98.5 }],
+      searchedFaceFound: true,
+      unsearchedFaceCount: 0,
+    });
+    const repository = createRepository({ searchUsersByImage });
+    const formData = new FormData();
+    formData.append(
+      'image',
+      new File([Uint8Array.from([1, 2, 3])], 'face.png', { type: 'image/png' }),
+    );
+    formData.append('userMatchThreshold', '90');
+    formData.append('maxUsers', '5');
+
+    const response = await testApp(repository).request(
+      '/api/v1/collections/employees/search/users-by-image',
+      { method: 'POST', body: formData },
+    );
+
+    expect(response.status).toBe(200);
+    expect(searchUsersByImage).toHaveBeenCalledWith({
+      collectionId: 'employees',
+      bytes: Uint8Array.from([1, 2, 3]),
+      userMatchThreshold: 90,
+      maxUsers: 5,
+    });
+    await expect(response.json()).resolves.toMatchObject({
+      matches: [{ userId: 'user-001', similarity: 98.5 }],
     });
   });
 });

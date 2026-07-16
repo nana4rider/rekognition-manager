@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectionIdSchema, userIdSchema } from './schemas.js';
+import { collectionIdSchema, searchUsersByImageOptionsSchema, userIdSchema } from './schemas.js';
 
 describe('識別子スキーマ', () => {
   it('有効なコレクションIDを受け入れる', () => {
@@ -13,5 +13,19 @@ describe('識別子スキーマ', () => {
 
   it('コロンを含むユーザーIDを受け入れる', () => {
     expect(userIdSchema.parse('tenant:user-001')).toBe('tenant:user-001');
+  });
+});
+
+describe('画像検索オプションスキーマ', () => {
+  it('フォーム文字列を数値へ変換する', () => {
+    expect(
+      searchUsersByImageOptionsSchema.parse({ userMatchThreshold: '90', maxUsers: '5' }),
+    ).toEqual({ userMatchThreshold: 90, maxUsers: 5 });
+  });
+
+  it('範囲外の値を拒否する', () => {
+    expect(
+      searchUsersByImageOptionsSchema.safeParse({ userMatchThreshold: 101, maxUsers: 0 }).success,
+    ).toBe(false);
   });
 });
