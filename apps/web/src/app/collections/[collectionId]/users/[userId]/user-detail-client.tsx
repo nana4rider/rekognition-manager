@@ -142,11 +142,11 @@ export function UserDetailClient({
         </Box>
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1} sx={{ alignItems: 'center' }}>
           <FormControl size="small" sx={{ minWidth: 320 }}>
-            <InputLabel>紐づける顔</InputLabel>
+            <InputLabel>関連付けする顔</InputLabel>
             <Select
               multiple
               value={selected}
-              label="紐づける顔"
+              label="関連付けする顔"
               onChange={(event) =>
                 setSelected(
                   typeof event.target.value === 'string'
@@ -174,13 +174,13 @@ export function UserDetailClient({
             loading={busy}
             onClick={() => void associate()}
           >
-            紐づけ
+            関連付け
           </Button>
         </Stack>
       </Stack>
       {availableFaces.length === 0 && (
         <Alert severity="info" sx={{ mb: 2 }}>
-          紐づけ可能な未割り当ての顔がありません。
+          関連付け可能な未割り当ての顔がありません。
         </Alert>
       )}
       <TableContainer component={Paper} sx={{ border: 1, borderColor: 'divider' }}>
@@ -197,7 +197,7 @@ export function UserDetailClient({
               <TableRow>
                 <TableCell colSpan={3} align="center">
                   <Typography color="text.secondary" sx={{ py: 5 }}>
-                    紐づけられた顔はありません
+                    関連付けられた顔はありません
                   </Typography>
                 </TableCell>
               </TableRow>
@@ -220,7 +220,7 @@ export function UserDetailClient({
                       startIcon={<LinkOffIcon />}
                       onClick={() => setUnlinkTarget(face)}
                     >
-                      紐づけ解除
+                      関連付け解除
                     </Button>
                   </Stack>
                 </TableCell>
@@ -253,8 +253,8 @@ export function UserDetailClient({
       </Dialog>
       <ConfirmDialog
         open={Boolean(unlinkTarget)}
-        title="顔の紐づけを解除"
-        message={`Face ID「${unlinkTarget?.faceId ?? ''}」の紐づけを解除します。顔自体は削除されません。`}
+        title="顔の関連付けを解除"
+        message={`Face ID「${unlinkTarget?.faceId ?? ''}」の関連付けを解除します。顔自体は削除されません。`}
         busy={busy}
         onCancel={() => setUnlinkTarget(undefined)}
         onConfirm={() => void disassociate()}

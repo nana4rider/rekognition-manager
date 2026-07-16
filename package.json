@@ -1,8 +1,9 @@
 {
   "name": "rekognition-manager",
-  "version": "0.4.0",
+  "version": "0.5.0",
   "author": "nana4rider",
   "license": "ISC",
+  "private": true,
   "engines": {
     "node": ">=24.0.0",
     "npm": ">=11.0.0"

@@ -90,7 +90,7 @@ export function ImageDropZone({
         <AddPhotoAlternateIcon color={dragging ? 'primary' : 'inherit'} />
         <Typography sx={{ fontWeight: 500 }}>{file?.name ?? emptyLabel}</Typography>
         <Typography variant="body2" color="text.secondary">
-          またはクリックして選択（JPEG／PNG、5MB以下）
+          またはクリックして選択(JPEG／PNG、5MB以下)
         </Typography>
       </Stack>
     </Box>
