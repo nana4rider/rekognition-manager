@@ -140,11 +140,4 @@ DELETE /api/v1/collections/:collectionId/users/:userId/faces/:faceId
 - Request ID、HTTPステータス、処理時間、AWS操作名を記録
 - AWS認証情報、Cookie、OIDCトークン、顔画像は記録しない
 
-## 将来の拡張
-
-- BFF方式のOIDC認証
-- 顔登録と同時に非公開S3バケットへ元画像を保存
-- `SearchUsersByImage`を試す画面
-- 監査ログや追加メタデータを保存するDB
-
 設計上の判断は[docs/adr](docs/adr)に記録します。
