@@ -39,7 +39,6 @@ const configSchema = z
     OIDC_CLIENT_SECRET: z.string().min(1).optional(),
     OIDC_AUTH_SECRET: z.string().min(32).optional(),
     OIDC_PROVIDER_NAME: z.string().min(1).default('OIDC'),
-    OIDC_SCOPES: z.string().min(1).default('openid profile email'),
     OIDC_AUDIENCE: z.string().min(1).optional(),
     APP_ORIGIN: z.url().optional(),
   })

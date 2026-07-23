@@ -48,6 +48,7 @@ export function createApp(
     app.get('/auth/login', oidc.requireLogin, (context) =>
       context.redirect(safeReturnTo(context.req.query('returnTo'))),
     );
+    app.get('/auth/me', oidc.currentUser);
     app.get('/auth/callback', oidc.callback);
     app.post('/auth/logout', oidc.logout);
     app.use('/api/*', oidc.requireApiAuth);

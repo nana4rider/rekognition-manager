@@ -12,6 +12,7 @@ import {
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 
+import { AuthUser } from '../components/auth-user';
 import { OIDC_ENABLED_REQUEST_HEADER } from '../lib/auth-status';
 import { theme } from '../theme';
 
@@ -46,10 +47,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                   Rekognition Manager
                 </Typography>
                 {oidcEnabled && (
-                  <Box component="form" action="/auth/logout" method="post" sx={{ ml: 'auto' }}>
-                    <Button type="submit" color="inherit">
-                      ログアウト
-                    </Button>
+                  <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
+                    <AuthUser />
+                    <Box component="form" action="/auth/logout" method="post">
+                      <Button type="submit" color="inherit">
+                        ログアウト
+                      </Button>
+                    </Box>
                   </Box>
                 )}
               </Toolbar>

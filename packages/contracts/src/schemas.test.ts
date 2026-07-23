@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   authStatusResponseSchema,
   collectionIdSchema,
+  currentUserResponseSchema,
   searchUsersByImageOptionsSchema,
   userIdSchema,
 } from './schemas.js';
@@ -18,6 +19,14 @@ describe('識別子スキーマ', () => {
 
   it('コロンを含むユーザーIDを受け入れる', () => {
     expect(userIdSchema.parse('tenant:user-001')).toBe('tenant:user-001');
+  });
+});
+
+describe('現在のユーザースキーマ', () => {
+  it('表示名を検証する', () => {
+    expect(currentUserResponseSchema.parse({ displayName: 'Nana Rider' })).toEqual({
+      displayName: 'Nana Rider',
+    });
   });
 });
 

@@ -69,7 +69,6 @@ OIDC_CLIENT_ID=rekognition-manager
 OIDC_CLIENT_SECRET=your-client-secret
 OIDC_AUTH_SECRET=32文字以上の十分に長いランダムな値
 OIDC_PROVIDER_NAME=Pocket ID
-OIDC_SCOPES=openid profile email
 # プロバイダーが要求する場合だけ指定
 # OIDC_AUDIENCE=your-api-audience
 APP_ORIGIN=http://localhost:3000
@@ -81,15 +80,21 @@ APP_ORIGIN=http://localhost:3000
 openssl rand -base64 32
 ```
 
-認証には`@hono/oidc-auth`を使用します。このミドルウェアはリフレッシュトークンによるセッション更新を行うため、OIDCプロバイダーでは機密クライアントを作成し、`OIDC_CLIENT_SECRET`を必ず設定してください。また、リフレッシュトークンの発行を許可してください。プロバイダーが`offline_access`スコープを要求する場合は、`OIDC_SCOPES=openid profile email offline_access`へ変更します。
+認証には`@hono/oidc-auth`を使用します。スコープは、このアプリがログインユーザー名を表示するために必要な`openid profile email`へ固定しています。表示名は`name`、`preferred_username`、`email`、`sub`の順で利用可能な値を選びます。
+
+このミドルウェアはリフレッシュトークンによるセッション更新を行うため、OIDCプロバイダーでは機密クライアントを作成し、`OIDC_CLIENT_SECRET`を必ず設定してください。また、上記スコープでリフレッシュトークンの発行を許可してください。
 
 本番環境の`APP_ORIGIN`にはHTTPSの公開URLを設定してください。OIDCトークン、クライアントシークレット、セッション署名鍵はブラウザのJavaScriptへ公開されず、ログにも出力しません。機密値へ`NEXT_PUBLIC_`を付けないでください。
 
 ログイン状態は既定で15分ごとにリフレッシュトークンを使って確認・更新され、セッション自体は既定で1日後に再認証されます。ログアウト時はローカルセッションを削除し、プロバイダーが失効エンドポイントを提供していればリフレッシュトークンも失効させます。OIDCプロバイダー上の他アプリのセッションは終了しません。
 
+ログイン中はAppBarへユーザー名を表示します。Webは`GET /auth/me`から表示用の名前だけを取得し、OIDCトークンや全クレームをブラウザのJavaScriptへ渡しません。
+
 OIDCの有効・無効はBFFだけが環境変数から判断し、Webは実行時にBFFの`/auth/status`へ問い合わせます。そのため、OIDC有効版と無効版でDockerイメージを分ける必要はありません。`OIDC_PROVIDER_NAME`はサインインボタンの表示名です。
 
 OIDC有効時に未ログインで画面へアクセスすると、簡素なサインイン画面へ移動します。利用者が`Sign in with Pocket ID`のようなボタンを押した場合だけOIDCフローを開始し、完了後は最初に開こうとしたアプリ内画面へ戻ります。APIアクセスはリダイレクトせず、未認証を401のJSONで返します。
+
+OIDCプロバイダーが`access_denied`を返した場合、ブラウザはサインイン画面へ戻り、サービスを利用する権限がないことを表示します。JSONとしてコールバックした場合は403を返します。プロバイダーの生のエラー説明は画面やログへ表示しません。
 
 ### IAMの最小権限例
 

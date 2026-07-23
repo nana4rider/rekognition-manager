@@ -5,7 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RekognitionRepository } from '../application/rekognition-repository.js';
 import { RekognitionService } from '../application/rekognition-service.js';
 import { createApp } from './app.js';
-import type { OidcHandlers } from './oidc.js';
+import { createOidcHandlers, selectDisplayName, type OidcHandlers } from './oidc.js';
 
 function createRepository(overrides: Partial<RekognitionRepository> = {}): RekognitionRepository {
   const collection: Collection = { collectionId: 'employees', faceModelVersion: '7.0' };
@@ -93,6 +93,7 @@ describe('BFF API', () => {
   it('OIDCのログイン・コールバック・ログアウト経路を公開する', async () => {
     const app = testApp(createRepository(), createTestOidc(true));
     expect((await app.request('/auth/login')).status).toBe(302);
+    expect((await app.request('/auth/me')).status).toBe(200);
     expect((await app.request('/auth/callback')).status).toBe(302);
     expect((await app.request('/auth/logout', { method: 'POST' })).status).toBe(303);
   });
@@ -106,6 +107,54 @@ describe('BFF API', () => {
 
     const external = await app.request('/auth/login?returnTo=https%3A%2F%2Fmalicious.example%2F');
     expect(external.headers.get('location')).toBe('/collections');
+  });
+
+  it('OIDCのアクセス拒否をJSONでは403へ変換する', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request(
+      '/auth/callback?error=access_denied&error_description=raw-provider-message&state=expected',
+      {
+        headers: {
+          Accept: 'application/json',
+          Cookie: 'state=expected',
+        },
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'OIDC_ACCESS_DENIED',
+        message: 'このサービスを利用する権限がありません',
+      },
+    });
+  });
+
+  it('OIDCのアクセス拒否をブラウザではサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/callback?error=access_denied&state=expected', {
+      headers: { Accept: 'text/html', Cookie: 'state=expected' },
+    });
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:3000/auth/sign-in?error=access_denied',
+    );
+  });
+
+  it('OIDCエラーでもstate不一致なら400で拒否する', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/callback?error=access_denied&state=unexpected', {
+      headers: {
+        Accept: 'application/json',
+        Cookie: 'state=expected',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: 'INVALID_OIDC_CALLBACK' },
+    });
   });
 
   it('不正なコレクションIDをAWSへ送らず400にする', async () => {
@@ -164,6 +213,18 @@ describe('BFF API', () => {
   });
 });
 
+describe('OIDC表示名', () => {
+  it('最初の空でない標準クレームを選ぶ', () => {
+    expect(selectDisplayName([undefined, '  ', 'preferred-user', 'mail@example.com'])).toBe(
+      'preferred-user',
+    );
+  });
+
+  it('利用できるクレームがない場合も空にしない', () => {
+    expect(selectDisplayName([undefined, null, ''])).toBe('Unknown user');
+  });
+});
+
 function createTestOidc(authenticated: boolean): OidcHandlers {
   const pass: OidcHandlers['initialize'] = async (_context, next) => {
     await next();
@@ -180,7 +241,29 @@ function createTestOidc(authenticated: boolean): OidcHandlers {
           Promise.resolve(
             context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
           ),
+    currentUser: (context) =>
+      Promise.resolve(
+        authenticated
+          ? context.json({ displayName: 'Test User' })
+          : context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
+      ),
     callback: (context) => Promise.resolve(context.redirect('/collections')),
     logout: (context) => Promise.resolve(context.redirect('/auth/logged-out', 303)),
   };
+}
+
+function createRealOidc(): OidcHandlers {
+  return createOidcHandlers({
+    NODE_ENV: 'test',
+    PORT: 3001,
+    LOG_LEVEL: 'silent',
+    AWS_REGION: 'ap-northeast-1',
+    OIDC_ENABLED: true,
+    OIDC_ISSUER_URL: 'https://id.example.com',
+    OIDC_CLIENT_ID: 'rekognition-manager',
+    OIDC_CLIENT_SECRET: 'client-secret',
+    OIDC_AUTH_SECRET: 'a-secure-session-secret-with-32-characters',
+    OIDC_PROVIDER_NAME: 'Test Provider',
+    APP_ORIGIN: 'http://localhost:3000',
+  });
 }
