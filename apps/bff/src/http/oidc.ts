@@ -143,7 +143,16 @@ export function createOidcHandlers(config: EnabledOidcConfig): OidcHandlers {
     },
     logout: async (context) => {
       await revokeSession(context);
-      return context.redirect(`${config.APP_ORIGIN}/auth/logged-out`, 303);
+      if (!config.OIDC_END_SESSION_URL) {
+        return context.redirect(`${config.APP_ORIGIN}/auth/sign-in`, 303);
+      }
+      const endSessionUrl = new URL(config.OIDC_END_SESSION_URL);
+      endSessionUrl.searchParams.set('client_id', config.OIDC_CLIENT_ID);
+      endSessionUrl.searchParams.set(
+        'post_logout_redirect_uri',
+        `${config.APP_ORIGIN}/auth/sign-in`,
+      );
+      return context.redirect(endSessionUrl.toString(), 303);
     },
   };
 }

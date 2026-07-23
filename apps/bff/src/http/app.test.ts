@@ -157,6 +157,27 @@ describe('BFF API', () => {
     });
   });
 
+  it('end-session未設定ならログアウト後にサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/logout', { method: 'POST' });
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('http://localhost:3000/auth/sign-in');
+  });
+
+  it('end-session設定時はプロバイダー経由でサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc('https://id.example.com/session/end'));
+    const response = await app.request('/auth/logout', { method: 'POST' });
+
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin + location.pathname).toBe('https://id.example.com/session/end');
+    expect(location.searchParams.get('client_id')).toBe('rekognition-manager');
+    expect(location.searchParams.get('post_logout_redirect_uri')).toBe(
+      'http://localhost:3000/auth/sign-in',
+    );
+  });
+
   it('不正なコレクションIDをAWSへ送らず400にする', async () => {
     const createCollection = vi.fn();
     const repository = createRepository({ createCollection });
@@ -248,11 +269,11 @@ function createTestOidc(authenticated: boolean): OidcHandlers {
           : context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
       ),
     callback: (context) => Promise.resolve(context.redirect('/collections')),
-    logout: (context) => Promise.resolve(context.redirect('/auth/logged-out', 303)),
+    logout: (context) => Promise.resolve(context.redirect('/auth/sign-in', 303)),
   };
 }
 
-function createRealOidc(): OidcHandlers {
+function createRealOidc(endSessionUrl?: string): OidcHandlers {
   return createOidcHandlers({
     NODE_ENV: 'test',
     PORT: 3001,
@@ -264,6 +285,7 @@ function createRealOidc(): OidcHandlers {
     OIDC_CLIENT_SECRET: 'client-secret',
     OIDC_AUTH_SECRET: 'a-secure-session-secret-with-32-characters',
     OIDC_PROVIDER_NAME: 'Test Provider',
+    ...(endSessionUrl ? { OIDC_END_SESSION_URL: endSessionUrl } : {}),
     APP_ORIGIN: 'http://localhost:3000',
   });
 }

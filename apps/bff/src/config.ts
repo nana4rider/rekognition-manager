@@ -40,6 +40,7 @@ const configSchema = z
     OIDC_AUTH_SECRET: z.string().min(32).optional(),
     OIDC_PROVIDER_NAME: z.string().min(1).default('OIDC'),
     OIDC_AUDIENCE: z.string().min(1).optional(),
+    OIDC_END_SESSION_URL: z.url().optional(),
     APP_ORIGIN: z.url().optional(),
   })
   .superRefine((config, context) => {

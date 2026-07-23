@@ -71,6 +71,8 @@ OIDC_AUTH_SECRET=32文字以上の十分に長いランダムな値
 OIDC_PROVIDER_NAME=Pocket ID
 # プロバイダーが要求する場合だけ指定
 # OIDC_AUDIENCE=your-api-audience
+# プロバイダー側のSSOセッションも終了する場合だけ指定
+# OIDC_END_SESSION_URL=https://id.example.com/end-session
 APP_ORIGIN=http://localhost:3000
 ```
 
@@ -86,7 +88,9 @@ openssl rand -base64 32
 
 本番環境の`APP_ORIGIN`にはHTTPSの公開URLを設定してください。OIDCトークン、クライアントシークレット、セッション署名鍵はブラウザのJavaScriptへ公開されず、ログにも出力しません。機密値へ`NEXT_PUBLIC_`を付けないでください。
 
-ログイン状態は既定で15分ごとにリフレッシュトークンを使って確認・更新され、セッション自体は既定で1日後に再認証されます。ログアウト時はローカルセッションを削除し、プロバイダーが失効エンドポイントを提供していればリフレッシュトークンも失効させます。OIDCプロバイダー上の他アプリのセッションは終了しません。
+ログイン状態は既定で15分ごとにリフレッシュトークンを使って確認・更新され、セッション自体は既定で1日後に再認証されます。ログアウト時はローカルセッションを削除し、プロバイダーが失効エンドポイントを提供していればリフレッシュトークンも失効させます。
+
+`OIDC_END_SESSION_URL`を設定すると、その後ブラウザをプロバイダーのend-session endpointへ移動してSSOセッションも終了します。BFFは`client_id`と`post_logout_redirect_uri=${APP_ORIGIN}/auth/sign-in`を付けるため、プロバイダー側にもこのサインインURLをLogout Callback URLとして登録してください。未設定の場合はプロバイダーのSSOセッションを維持したまま、アプリのサインイン画面へ戻ります。
 
 ログイン中はAppBarへユーザー名を表示します。Webは`GET /auth/me`から表示用の名前だけを取得し、OIDCトークンや全クレームをブラウザのJavaScriptへ渡しません。
 

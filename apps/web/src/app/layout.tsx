@@ -7,12 +7,12 @@ import {
   ThemeProvider,
   Toolbar,
   Typography,
-  Button,
 } from '@mui/material';
 import type { Metadata } from 'next';
 import { headers } from 'next/headers';
 
 import { AuthUser } from '../components/auth-user';
+import { AuthHistoryGuard, LogoutButton } from '../components/auth-session-controls';
 import { OIDC_ENABLED_REQUEST_HEADER } from '../lib/auth-status';
 import { theme } from '../theme';
 
@@ -31,6 +31,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
+            {oidcEnabled && <AuthHistoryGuard />}
             <AppBar
               position="static"
               color="inherit"
@@ -49,11 +50,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 {oidcEnabled && (
                   <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
                     <AuthUser />
-                    <Box component="form" action="/auth/logout" method="post">
-                      <Button type="submit" color="inherit">
-                        ログアウト
-                      </Button>
-                    </Box>
+                    <LogoutButton />
                   </Box>
                 )}
               </Toolbar>

@@ -1,6 +1,7 @@
-import { Alert, Button, Paper, Stack, Typography } from '@mui/material';
+import { Alert, Paper, Stack, Typography } from '@mui/material';
 import { redirect } from 'next/navigation';
 
+import { SignInButton } from '../../../components/auth-session-controls';
 import { getAuthStatus } from '../../../lib/auth-status';
 
 export default async function SignInPage({
@@ -27,9 +28,7 @@ export default async function SignInPage({
           続行するには認証プロバイダーでログインしてください。
         </Typography>
         {errorMessage && <Alert severity="error">{errorMessage}</Alert>}
-        <Button href={loginUrl} variant="contained">
-          Sign in with {status.providerName}
-        </Button>
+        <SignInButton href={loginUrl} providerName={status.providerName} />
       </Stack>
     </Paper>
   );
