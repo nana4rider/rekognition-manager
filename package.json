@@ -18,6 +18,8 @@
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
+    "openapi:generate": "npm run build --workspace @rekognition-manager/contracts && npm run openapi:generate --workspace @rekognition-manager/bff",
+    "openapi:check": "npm run build --workspace @rekognition-manager/contracts && npm run openapi:check --workspace @rekognition-manager/bff",
     "typecheck": "npm run build --workspace @rekognition-manager/contracts && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "prepare": "npm run build --workspace @rekognition-manager/contracts"

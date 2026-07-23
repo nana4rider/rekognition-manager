@@ -196,32 +196,15 @@ WebとBFFは別コンテナです。DockerイメージへAWS認証情報は埋�
 
 ## API
 
-主要なAPIは次のとおりです。
+API仕様は[OpenAPI UI](https://nana4rider.github.io/openapi-ui/?rekognition-manager)で確認できます。仕様の元ファイルは[docs/openapi.json](docs/openapi.json)です。
 
-```text
-GET    /api/v1/collections
-POST   /api/v1/collections
-GET    /api/v1/collections/:collectionId
-DELETE /api/v1/collections/:collectionId
+BFFのルートやスキーマを変更した場合は、次のコマンドでOpenAPI仕様を更新します。
 
-GET    /api/v1/collections/:collectionId/users
-POST   /api/v1/collections/:collectionId/users
-GET    /api/v1/collections/:collectionId/users/:userId
-DELETE /api/v1/collections/:collectionId/users/:userId
-
-GET    /api/v1/collections/:collectionId/faces
-POST   /api/v1/collections/:collectionId/faces
-DELETE /api/v1/collections/:collectionId/faces/:faceId
-
-POST   /api/v1/collections/:collectionId/users/:userId/faces
-DELETE /api/v1/collections/:collectionId/users/:userId/faces/:faceId
-
-POST   /api/v1/collections/:collectionId/search/users-by-image
+```bash
+npm run openapi:generate
 ```
 
-顔登録は`multipart/form-data`で`image`と任意の`externalImageId`を送信します。対応形式はJPEGとPNG、上限は5MBです。元画像は保存しません。
-
-画像検索は`multipart/form-data`で`image`、任意の`userMatchThreshold`と`maxUsers`を送信します。検索画像は保存しません。
+`npm run openapi:check`とGitHub Actionsで、生成済みJSONがBFFの実装と一致していることを検査します。
 
 ## その他
 
