@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   authStatusResponseSchema,
   collectionIdSchema,
+  collectionSchema,
   currentUserResponseSchema,
   searchUsersByImageOptionsSchema,
   userIdSchema,
@@ -57,5 +58,15 @@ describe('認証状態スキーマ', () => {
       providerName: 'Pocket ID',
       sessionCookieName: 'rekognition-manager-session',
     });
+  });
+});
+
+describe('コレクションスキーマ', () => {
+  it('ARNを含む入力は無視して、必要なフィールドだけを返す', () => {
+    expect(collectionSchema.parse({ collectionId: 'employees', collectionArn: 'arn:aws' })).toEqual(
+      {
+        collectionId: 'employees',
+      },
+    );
   });
 });

@@ -3,7 +3,7 @@
   "info": {
     "title": "Rekognition Manager BFF API",
     "description": "Amazon Rekognitionのコレクション、ユーザー、顔を管理するBFF API",
-    "version": "0.7.0"
+    "version": "0.8.0"
   },
   "servers": [{ "url": "http://localhost:3001", "description": "ローカルBFF" }],
   "tags": [
@@ -37,7 +37,6 @@
                             "maxLength": 255,
                             "pattern": "^[a-zA-Z0-9_.-]+$"
                           },
-                          "collectionArn": { "type": "string" },
                           "faceModelVersion": { "type": "string" },
                           "creationTimestamp": {
                             "type": "string",
@@ -192,7 +191,6 @@
                       "maxLength": 255,
                       "pattern": "^[a-zA-Z0-9_.-]+$"
                     },
-                    "collectionArn": { "type": "string" },
                     "faceModelVersion": { "type": "string" },
                     "creationTimestamp": {
                       "type": "string",
@@ -347,7 +345,6 @@
                       "maxLength": 255,
                       "pattern": "^[a-zA-Z0-9_.-]+$"
                     },
-                    "collectionArn": { "type": "string" },
                     "faceModelVersion": { "type": "string" },
                     "creationTimestamp": {
                       "type": "string",

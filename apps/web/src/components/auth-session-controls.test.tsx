@@ -1,5 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react';
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   LogoutButton,
@@ -24,8 +24,17 @@ describe('OIDCセッションのブラウザ履歴制御', () => {
     window.sessionStorage.setItem('rekognition-manager:signed-out', 'true');
     render(<SignInButton href="/auth/login" providerName="Pocket ID" />);
 
+    const preventDefault = vi.fn();
+    window.addEventListener('click', (event) => {
+      if (event.target instanceof HTMLAnchorElement) {
+        event.preventDefault();
+        preventDefault();
+      }
+    });
+
     fireEvent.click(screen.getByRole('link', { name: 'Sign in with Pocket ID' }));
 
+    expect(preventDefault).toHaveBeenCalled();
     expect(window.sessionStorage.getItem('rekognition-manager:signed-out')).toBeNull();
   });
 
