@@ -13,6 +13,7 @@ import { headers } from 'next/headers';
 
 import { AuthUser } from '../components/auth-user';
 import { AuthHistoryGuard, LogoutButton } from '../components/auth-session-controls';
+import { currentUserResponseSchema } from '@rekognition-manager/contracts';
 import { OIDC_ENABLED_REQUEST_HEADER } from '../lib/auth-status';
 import { theme } from '../theme';
 
@@ -23,8 +24,29 @@ export const metadata: Metadata = {
 
 export const dynamic = 'force-dynamic';
 
+async function getCurrentUserDisplayName(requestHeaders: Headers): Promise<string | null> {
+  const oidcEnabled = requestHeaders.get(OIDC_ENABLED_REQUEST_HEADER) === 'true';
+  if (!oidcEnabled) return null;
+
+  const cookie = requestHeaders.get('cookie') ?? '';
+  if (!cookie) return null;
+
+  const bffOrigin = process.env.BFF_ORIGIN ?? 'http://localhost:3001';
+  const response = await fetch(new URL('/auth/me', bffOrigin), {
+    headers: { cookie },
+  });
+  if (!response.ok) return null;
+
+  const data = currentUserResponseSchema.safeParse(await response.json());
+  if (!data.success) return null;
+  return data.data.displayName;
+}
+
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
-  const oidcEnabled = (await headers()).get(OIDC_ENABLED_REQUEST_HEADER) === 'true';
+  const requestHeaders = await headers();
+  const oidcEnabled = requestHeaders.get(OIDC_ENABLED_REQUEST_HEADER) === 'true';
+  const displayName = await getCurrentUserDisplayName(requestHeaders);
+
   return (
     <html lang="ja">
       <body style={{ margin: 0 }}>
@@ -49,7 +71,7 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
                 </Typography>
                 {oidcEnabled && (
                   <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 2 }}>
-                    <AuthUser />
+                    <AuthUser initialDisplayName={displayName} />
                     <LogoutButton />
                   </Box>
                 )}
