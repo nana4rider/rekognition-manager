@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RekognitionRepository } from '../application/rekognition-repository.js';
 import { RekognitionService } from '../application/rekognition-service.js';
 import { createApp } from './app.js';
+import type { OidcHandlers } from './oidc.js';
 
 function createRepository(overrides: Partial<RekognitionRepository> = {}): RekognitionRepository {
   const collection: Collection = { collectionId: 'employees', faceModelVersion: '7.0' };
@@ -32,8 +33,8 @@ function createRepository(overrides: Partial<RekognitionRepository> = {}): Rekog
   };
 }
 
-function testApp(repository = createRepository()) {
-  return createApp(pino({ level: 'silent' }), () => new RekognitionService(repository));
+function testApp(repository = createRepository(), oidc?: OidcHandlers) {
+  return createApp(pino({ level: 'silent' }), () => new RekognitionService(repository), oidc);
 }
 
 describe('BFF API', () => {
@@ -43,6 +44,24 @@ describe('BFF API', () => {
     await expect(response.json()).resolves.toEqual({ status: 'ok' });
   });
 
+  it('OIDCの実行時状態を返す', async () => {
+    const disabledResponse = await testApp().request('/auth/status');
+    await expect(disabledResponse.json()).resolves.toEqual({
+      enabled: false,
+      providerName: null,
+      sessionCookieName: null,
+    });
+
+    const enabledResponse = await testApp(createRepository(), createTestOidc(true)).request(
+      '/auth/status',
+    );
+    await expect(enabledResponse.json()).resolves.toEqual({
+      enabled: true,
+      providerName: 'Test Provider',
+      sessionCookieName: 'rekognition-manager-session',
+    });
+  });
+
   it('コレクション一覧を統一形式で返す', async () => {
     const response = await testApp().request('/api/v1/collections?limit=20');
     expect(response.status).toBe(200);
@@ -50,6 +69,43 @@ describe('BFF API', () => {
       items: [{ collectionId: 'employees', faceModelVersion: '7.0' }],
       nextCursor: null,
     });
+  });
+
+  it('OIDC有効時はセッションなしのAPIアクセスを拒否する', async () => {
+    const response = await testApp(createRepository(), createTestOidc(false)).request(
+      '/api/v1/collections',
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it('OIDC有効時は有効なセッションでAPIアクセスを許可する', async () => {
+    const response = await testApp(createRepository(), createTestOidc(true)).request(
+      '/api/v1/collections',
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it('OIDC有効時もヘルスチェックは認証を要求しない', async () => {
+    const response = await testApp(createRepository(), createTestOidc(false)).request('/health');
+    expect(response.status).toBe(200);
+  });
+
+  it('OIDCのログイン・コールバック・ログアウト経路を公開する', async () => {
+    const app = testApp(createRepository(), createTestOidc(true));
+    expect((await app.request('/auth/login')).status).toBe(302);
+    expect((await app.request('/auth/callback')).status).toBe(302);
+    expect((await app.request('/auth/logout', { method: 'POST' })).status).toBe(303);
+  });
+
+  it('ログイン後は安全なアプリ内returnToへ戻す', async () => {
+    const app = testApp(createRepository(), createTestOidc(true));
+    const allowed = await app.request(
+      '/auth/login?returnTo=%2Fcollections%2Femployees%2Fusers%3Flimit%3D20',
+    );
+    expect(allowed.headers.get('location')).toBe('/collections/employees/users?limit=20');
+
+    const external = await app.request('/auth/login?returnTo=https%3A%2F%2Fmalicious.example%2F');
+    expect(external.headers.get('location')).toBe('/collections');
   });
 
   it('不正なコレクションIDをAWSへ送らず400にする', async () => {
@@ -107,3 +163,24 @@ describe('BFF API', () => {
     });
   });
 });
+
+function createTestOidc(authenticated: boolean): OidcHandlers {
+  const pass: OidcHandlers['initialize'] = async (_context, next) => {
+    await next();
+  };
+  return {
+    providerName: 'Test Provider',
+    initialize: pass,
+    requireLogin: async (_context, next) => {
+      await next();
+    },
+    requireApiAuth: authenticated
+      ? pass
+      : (context) =>
+          Promise.resolve(
+            context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
+          ),
+    callback: (context) => Promise.resolve(context.redirect('/collections')),
+    logout: (context) => Promise.resolve(context.redirect('/auth/logged-out', 303)),
+  };
+}

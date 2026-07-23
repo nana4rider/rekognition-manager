@@ -13,6 +13,7 @@ Amazon Rekognitionのコレクション、ユーザー、顔を管理するWeb U
 - 顔の一覧、画像からの登録、削除
 - ユーザーと顔の関連付け、関連付け解除
 - 画像からのユーザー検索
+- 環境変数で任意に有効化できる汎用OIDC認証
 
 ## 構成
 
@@ -56,6 +57,39 @@ AWS_SECRET_ACCESS_KEY=your-secret-access-key
 ```
 
 `.env`はGitの管理対象外です。認証情報をコミットしないでください。
+
+### OIDC認証（任意）
+
+認証はデフォルトで無効です。OIDC Discoveryに対応したプロバイダーで有効化する場合は、プロバイダー側へ `http://localhost:3000/auth/callback` をリダイレクトURIとして登録し、`.env`を設定します。
+
+```dotenv
+OIDC_ENABLED=true
+OIDC_ISSUER_URL=https://id.example.com
+OIDC_CLIENT_ID=rekognition-manager
+OIDC_CLIENT_SECRET=your-client-secret
+OIDC_AUTH_SECRET=32文字以上の十分に長いランダムな値
+OIDC_PROVIDER_NAME=Pocket ID
+OIDC_SCOPES=openid profile email
+# プロバイダーが要求する場合だけ指定
+# OIDC_AUDIENCE=your-api-audience
+APP_ORIGIN=http://localhost:3000
+```
+
+`OIDC_AUTH_SECRET`はアプリのセッションCookieへ署名する鍵です。次のコマンドなどで生成し、環境ごとに異なる値を安全に保管してください。
+
+```bash
+openssl rand -base64 32
+```
+
+認証には`@hono/oidc-auth`を使用します。このミドルウェアはリフレッシュトークンによるセッション更新を行うため、OIDCプロバイダーでは機密クライアントを作成し、`OIDC_CLIENT_SECRET`を必ず設定してください。また、リフレッシュトークンの発行を許可してください。プロバイダーが`offline_access`スコープを要求する場合は、`OIDC_SCOPES=openid profile email offline_access`へ変更します。
+
+本番環境の`APP_ORIGIN`にはHTTPSの公開URLを設定してください。OIDCトークン、クライアントシークレット、セッション署名鍵はブラウザのJavaScriptへ公開されず、ログにも出力しません。機密値へ`NEXT_PUBLIC_`を付けないでください。
+
+ログイン状態は既定で15分ごとにリフレッシュトークンを使って確認・更新され、セッション自体は既定で1日後に再認証されます。ログアウト時はローカルセッションを削除し、プロバイダーが失効エンドポイントを提供していればリフレッシュトークンも失効させます。OIDCプロバイダー上の他アプリのセッションは終了しません。
+
+OIDCの有効・無効はBFFだけが環境変数から判断し、Webは実行時にBFFの`/auth/status`へ問い合わせます。そのため、OIDC有効版と無効版でDockerイメージを分ける必要はありません。`OIDC_PROVIDER_NAME`はサインインボタンの表示名です。
+
+OIDC有効時に未ログインで画面へアクセスすると、簡素なサインイン画面へ移動します。利用者が`Sign in with Pocket ID`のようなボタンを押した場合だけOIDCフローを開始し、完了後は最初に開こうとしたアプリ内画面へ戻ります。APIアクセスはリダイレクトせず、未認証を401のJSONで返します。
 
 ### IAMの最小権限例
 
@@ -108,6 +142,8 @@ npm run dev
 - Web: http://localhost:3000
 - BFF: http://localhost:3001
 - ヘルスチェック: http://localhost:3001/health
+
+OIDC認証を有効にすると、Web画面は未ログイン時にOIDCプロバイダーへ移動します。BFFの`/api/v1/*`も認証必須になり、`/health`と`/ready`だけは認証なしで利用できます。
 
 画面を開いただけで一覧APIが実AWSへアクセスします。開発専用のAWSアカウントと最小権限のIAMを使用してください。削除操作は実際のAWSリソースを削除します。
 

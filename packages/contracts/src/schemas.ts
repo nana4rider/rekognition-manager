@@ -111,6 +111,11 @@ export const associateFacesResponseSchema = z.object({
 });
 
 export const successResponseSchema = z.object({ success: z.literal(true) });
+export const authStatusResponseSchema = z.object({
+  enabled: z.boolean(),
+  providerName: z.string().min(1).nullable(),
+  sessionCookieName: z.string().min(1).nullable(),
+});
 export const errorResponseSchema = z.object({
   error: z.object({
     code: z.string(),
@@ -135,4 +140,5 @@ export type SearchUsersByImageResponse = z.infer<typeof searchUsersByImageRespon
 export type UserImageMatch = z.infer<typeof userImageMatchSchema>;
 export type AssociateFacesRequest = z.infer<typeof associateFacesRequestSchema>;
 export type AssociateFacesResponse = z.infer<typeof associateFacesResponseSchema>;
+export type AuthStatusResponse = z.infer<typeof authStatusResponseSchema>;
 export type ErrorResponse = z.infer<typeof errorResponseSchema>;
