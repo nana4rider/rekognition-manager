@@ -1,6 +1,6 @@
 {
   "name": "@rekognition-manager/bff",
-  "version": "0.5.0",
+  "version": "0.6.0",
   "author": "nana4rider",
   "license": "ISC",
   "private": true,
@@ -16,6 +16,7 @@
     "@aws-sdk/client-rekognition": "3.1088.0",
     "@aws-sdk/client-s3": "^3.1088.0",
     "@hono/node-server": "2.0.9",
+    "@hono/oidc-auth": "1.8.2",
     "@hono/zod-validator": "0.7.2",
     "@rekognition-manager/contracts": "*",
     "dotenv": "17.2.1",

@@ -5,6 +5,7 @@ import { describe, expect, it, vi } from 'vitest';
 import type { RekognitionRepository } from '../application/rekognition-repository.js';
 import { RekognitionService } from '../application/rekognition-service.js';
 import { createApp } from './app.js';
+import { createOidcHandlers, selectDisplayName, type OidcHandlers } from './oidc.js';
 
 function createRepository(overrides: Partial<RekognitionRepository> = {}): RekognitionRepository {
   const collection: Collection = { collectionId: 'employees', faceModelVersion: '7.0' };
@@ -32,8 +33,8 @@ function createRepository(overrides: Partial<RekognitionRepository> = {}): Rekog
   };
 }
 
-function testApp(repository = createRepository()) {
-  return createApp(pino({ level: 'silent' }), () => new RekognitionService(repository));
+function testApp(repository = createRepository(), oidc?: OidcHandlers) {
+  return createApp(pino({ level: 'silent' }), () => new RekognitionService(repository), oidc);
 }
 
 describe('BFF API', () => {
@@ -43,6 +44,24 @@ describe('BFF API', () => {
     await expect(response.json()).resolves.toEqual({ status: 'ok' });
   });
 
+  it('OIDCの実行時状態を返す', async () => {
+    const disabledResponse = await testApp().request('/auth/status');
+    await expect(disabledResponse.json()).resolves.toEqual({
+      enabled: false,
+      providerName: null,
+      sessionCookieName: null,
+    });
+
+    const enabledResponse = await testApp(createRepository(), createTestOidc(true)).request(
+      '/auth/status',
+    );
+    await expect(enabledResponse.json()).resolves.toEqual({
+      enabled: true,
+      providerName: 'Test Provider',
+      sessionCookieName: 'rekognition-manager-session',
+    });
+  });
+
   it('コレクション一覧を統一形式で返す', async () => {
     const response = await testApp().request('/api/v1/collections?limit=20');
     expect(response.status).toBe(200);
@@ -50,6 +69,113 @@ describe('BFF API', () => {
       items: [{ collectionId: 'employees', faceModelVersion: '7.0' }],
       nextCursor: null,
     });
+  });
+
+  it('OIDC有効時はセッションなしのAPIアクセスを拒否する', async () => {
+    const response = await testApp(createRepository(), createTestOidc(false)).request(
+      '/api/v1/collections',
+    );
+    expect(response.status).toBe(401);
+  });
+
+  it('OIDC有効時は有効なセッションでAPIアクセスを許可する', async () => {
+    const response = await testApp(createRepository(), createTestOidc(true)).request(
+      '/api/v1/collections',
+    );
+    expect(response.status).toBe(200);
+  });
+
+  it('OIDC有効時もヘルスチェックは認証を要求しない', async () => {
+    const response = await testApp(createRepository(), createTestOidc(false)).request('/health');
+    expect(response.status).toBe(200);
+  });
+
+  it('OIDCのログイン・コールバック・ログアウト経路を公開する', async () => {
+    const app = testApp(createRepository(), createTestOidc(true));
+    expect((await app.request('/auth/login')).status).toBe(302);
+    expect((await app.request('/auth/me')).status).toBe(200);
+    expect((await app.request('/auth/callback')).status).toBe(302);
+    expect((await app.request('/auth/logout', { method: 'POST' })).status).toBe(303);
+  });
+
+  it('ログイン後は安全なアプリ内returnToへ戻す', async () => {
+    const app = testApp(createRepository(), createTestOidc(true));
+    const allowed = await app.request(
+      '/auth/login?returnTo=%2Fcollections%2Femployees%2Fusers%3Flimit%3D20',
+    );
+    expect(allowed.headers.get('location')).toBe('/collections/employees/users?limit=20');
+
+    const external = await app.request('/auth/login?returnTo=https%3A%2F%2Fmalicious.example%2F');
+    expect(external.headers.get('location')).toBe('/collections');
+  });
+
+  it('OIDCのアクセス拒否をJSONでは403へ変換する', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request(
+      '/auth/callback?error=access_denied&error_description=raw-provider-message&state=expected',
+      {
+        headers: {
+          Accept: 'application/json',
+          Cookie: 'state=expected',
+        },
+      },
+    );
+
+    expect(response.status).toBe(403);
+    await expect(response.json()).resolves.toMatchObject({
+      error: {
+        code: 'OIDC_ACCESS_DENIED',
+        message: 'このサービスを利用する権限がありません',
+      },
+    });
+  });
+
+  it('OIDCのアクセス拒否をブラウザではサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/callback?error=access_denied&state=expected', {
+      headers: { Accept: 'text/html', Cookie: 'state=expected' },
+    });
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe(
+      'http://localhost:3000/auth/sign-in?error=access_denied',
+    );
+  });
+
+  it('OIDCエラーでもstate不一致なら400で拒否する', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/callback?error=access_denied&state=unexpected', {
+      headers: {
+        Accept: 'application/json',
+        Cookie: 'state=expected',
+      },
+    });
+
+    expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toMatchObject({
+      error: { code: 'INVALID_OIDC_CALLBACK' },
+    });
+  });
+
+  it('end-session未設定ならログアウト後にサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc());
+    const response = await app.request('/auth/logout', { method: 'POST' });
+
+    expect(response.status).toBe(303);
+    expect(response.headers.get('location')).toBe('http://localhost:3000/auth/sign-in');
+  });
+
+  it('end-session設定時はプロバイダー経由でサインイン画面へ戻す', async () => {
+    const app = testApp(createRepository(), createRealOidc('https://id.example.com/session/end'));
+    const response = await app.request('/auth/logout', { method: 'POST' });
+
+    expect(response.status).toBe(303);
+    const location = new URL(response.headers.get('location') ?? '');
+    expect(location.origin + location.pathname).toBe('https://id.example.com/session/end');
+    expect(location.searchParams.get('client_id')).toBe('rekognition-manager');
+    expect(location.searchParams.get('post_logout_redirect_uri')).toBe(
+      'http://localhost:3000/auth/sign-in',
+    );
   });
 
   it('不正なコレクションIDをAWSへ送らず400にする', async () => {
@@ -107,3 +233,59 @@ describe('BFF API', () => {
     });
   });
 });
+
+describe('OIDC表示名', () => {
+  it('最初の空でない標準クレームを選ぶ', () => {
+    expect(selectDisplayName([undefined, '  ', 'preferred-user', 'mail@example.com'])).toBe(
+      'preferred-user',
+    );
+  });
+
+  it('利用できるクレームがない場合も空にしない', () => {
+    expect(selectDisplayName([undefined, null, ''])).toBe('Unknown user');
+  });
+});
+
+function createTestOidc(authenticated: boolean): OidcHandlers {
+  const pass: OidcHandlers['initialize'] = async (_context, next) => {
+    await next();
+  };
+  return {
+    providerName: 'Test Provider',
+    initialize: pass,
+    requireLogin: async (_context, next) => {
+      await next();
+    },
+    requireApiAuth: authenticated
+      ? pass
+      : (context) =>
+          Promise.resolve(
+            context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
+          ),
+    currentUser: (context) =>
+      Promise.resolve(
+        authenticated
+          ? context.json({ displayName: 'Test User' })
+          : context.json({ error: { code: 'UNAUTHORIZED', message: 'ログインが必要です' } }, 401),
+      ),
+    callback: (context) => Promise.resolve(context.redirect('/collections')),
+    logout: (context) => Promise.resolve(context.redirect('/auth/sign-in', 303)),
+  };
+}
+
+function createRealOidc(endSessionUrl?: string): OidcHandlers {
+  return createOidcHandlers({
+    NODE_ENV: 'test',
+    PORT: 3001,
+    LOG_LEVEL: 'silent',
+    AWS_REGION: 'ap-northeast-1',
+    OIDC_ENABLED: true,
+    OIDC_ISSUER_URL: 'https://id.example.com',
+    OIDC_CLIENT_ID: 'rekognition-manager',
+    OIDC_CLIENT_SECRET: 'client-secret',
+    OIDC_AUTH_SECRET: 'a-secure-session-secret-with-32-characters',
+    OIDC_PROVIDER_NAME: 'Test Provider',
+    ...(endSessionUrl ? { OIDC_END_SESSION_URL: endSessionUrl } : {}),
+    APP_ORIGIN: 'http://localhost:3000',
+  });
+}

@@ -7,8 +7,13 @@ import { ZodError } from 'zod';
 
 import type { AppEnv } from './types.js';
 import { createApiRoutes, type ServiceFactory } from './routes.js';
+import type { OidcHandlers } from './oidc.js';
 
-export function createApp(rootLogger: PinoLogger, createService: ServiceFactory): Hono<AppEnv> {
+export function createApp(
+  rootLogger: PinoLogger,
+  createService: ServiceFactory,
+  oidc?: OidcHandlers,
+): Hono<AppEnv> {
   const app = new Hono<AppEnv>();
 
   app.use('*', requestId());
@@ -28,9 +33,26 @@ export function createApp(rootLogger: PinoLogger, createService: ServiceFactory)
       'request completed',
     );
   });
+  if (oidc) app.use('*', oidc.initialize);
 
   app.get('/health', (context) => context.json({ status: 'ok' }));
   app.get('/ready', (context) => context.json({ status: 'ready' }));
+  app.get('/auth/status', (context) =>
+    context.json({
+      enabled: oidc !== undefined,
+      providerName: oidc?.providerName ?? null,
+      sessionCookieName: oidc ? 'rekognition-manager-session' : null,
+    }),
+  );
+  if (oidc) {
+    app.get('/auth/login', oidc.requireLogin, (context) =>
+      context.redirect(safeReturnTo(context.req.query('returnTo'))),
+    );
+    app.get('/auth/me', oidc.currentUser);
+    app.get('/auth/callback', oidc.callback);
+    app.post('/auth/logout', oidc.logout);
+    app.use('/api/*', oidc.requireApiAuth);
+  }
   app.route('/api/v1', createApiRoutes(createService));
 
   app.notFound((context) =>
@@ -91,4 +113,11 @@ export function createApp(rootLogger: PinoLogger, createService: ServiceFactory)
   });
 
   return app;
+}
+
+function safeReturnTo(candidate: string | undefined): string {
+  if (!candidate?.startsWith('/') || candidate.startsWith('//')) return '/collections';
+  const url = new URL(candidate, 'http://app.internal');
+  if (url.origin !== 'http://app.internal') return '/collections';
+  return `${url.pathname}${url.search}${url.hash}`;
 }

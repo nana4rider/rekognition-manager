@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { collectionIdSchema, searchUsersByImageOptionsSchema, userIdSchema } from './schemas.js';
+import {
+  authStatusResponseSchema,
+  collectionIdSchema,
+  currentUserResponseSchema,
+  searchUsersByImageOptionsSchema,
+  userIdSchema,
+} from './schemas.js';
 
 describe('識別子スキーマ', () => {
   it('有効なコレクションIDを受け入れる', () => {
@@ -16,6 +22,14 @@ describe('識別子スキーマ', () => {
   });
 });
 
+describe('現在のユーザースキーマ', () => {
+  it('表示名を検証する', () => {
+    expect(currentUserResponseSchema.parse({ displayName: 'Nana Rider' })).toEqual({
+      displayName: 'Nana Rider',
+    });
+  });
+});
+
 describe('画像検索オプションスキーマ', () => {
   it('フォーム文字列を数値へ変換する', () => {
     expect(
@@ -27,5 +41,21 @@ describe('画像検索オプションスキーマ', () => {
     expect(
       searchUsersByImageOptionsSchema.safeParse({ userMatchThreshold: 101, maxUsers: 0 }).success,
     ).toBe(false);
+  });
+});
+
+describe('認証状態スキーマ', () => {
+  it('OIDC有効状態とCookie名を検証する', () => {
+    expect(
+      authStatusResponseSchema.parse({
+        enabled: true,
+        providerName: 'Pocket ID',
+        sessionCookieName: 'rekognition-manager-session',
+      }),
+    ).toEqual({
+      enabled: true,
+      providerName: 'Pocket ID',
+      sessionCookieName: 'rekognition-manager-session',
+    });
   });
 });

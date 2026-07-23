@@ -17,6 +17,8 @@ export function createRootLogger(config: AppConfig): PinoLogger {
         'AWS_ACCESS_KEY_ID',
         'AWS_SECRET_ACCESS_KEY',
         'AWS_SESSION_TOKEN',
+        'OIDC_CLIENT_SECRET',
+        'OIDC_AUTH_SECRET',
         'image',
         'bytes',
         '*.image',
