@@ -176,6 +176,20 @@ npm test
 npm run build
 ```
 
+`npm install`を実行すると、HuskyによるGit hookが設定されます。
+
+- コミット時: ステージ済みファイルだけを対象にESLintとPrettierを実行します。
+- push時: 型チェックとテストを実行します。
+
+コミット時に`apps/bff/src/http/`、`packages/contracts/src/`、または
+`apps/bff/package.json`の変更が含まれる場合は、OpenAPI仕様が最新かどうかも検査します。
+検査に失敗した場合は`npm run openapi:generate`で仕様を更新し、生成された
+`docs/openapi.json`を確認してからコミットへ追加してください。OpenAPI仕様の生成や
+コミットはGit hookから自動では行いません。
+
+一時的にGit hookを省略する場合は、Gitコマンドへ`--no-verify`を指定できます。
+通常はGitHub Actionsで同じ品質チェックが成功することを確認してください。
+
 通常のテストではAWS SDKをモックし、実際のAWSリソースを変更しません。
 
 ## Docker

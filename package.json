@@ -22,7 +22,8 @@
     "openapi:check": "npm run build --workspace @rekognition-manager/contracts && npm run openapi:check --workspace @rekognition-manager/bff",
     "typecheck": "npm run build --workspace @rekognition-manager/contracts && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
-    "prepare": "npm run build --workspace @rekognition-manager/contracts"
+    "check:push": "npm run typecheck && npm test",
+    "prepare": "npm run build --workspace @rekognition-manager/contracts && husky"
   },
   "devDependencies": {
     "@eslint/js": "9.31.0",
@@ -31,6 +32,8 @@
     "eslint": "9.31.0",
     "eslint-config-prettier": "10.1.8",
     "globals": "16.3.0",
+    "husky": "9.1.7",
+    "lint-staged": "17.2.0",
     "prettier": "3.6.2",
     "typescript": "5.8.3",
     "typescript-eslint": "8.38.0"
