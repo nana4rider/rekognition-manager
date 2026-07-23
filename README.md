@@ -135,9 +135,9 @@ docker compose down
 
 Web と BFF は別々のコンテナとして動作します。
 
-## API ドキュメント
+## ドキュメント
 
-API 仕様の元ファイルは [docs/openapi.json](docs/openapi.json) です。
+- [API Document](https://nana4rider.github.io/openapi-ui/?rekognition-manager)
 
 ## 補足
 
