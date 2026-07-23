@@ -8,15 +8,13 @@ afterEach(() => {
 });
 
 describe('AuthUser', () => {
-  it('BFFから取得したログインユーザー名を表示する', async () => {
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ displayName: 'Nana Rider' })));
-
-    render(<AuthUser />);
+  it('SSRで取得したログインユーザー名を表示する', async () => {
+    render(<AuthUser initialDisplayName="Nana Rider" />);
 
     expect(await screen.findByLabelText('ログインユーザー')).toHaveTextContent('Nana Rider');
   });
 
-  it('ユーザー取得に失敗した場合は何も表示しない', async () => {
+  it('クライアント側でユーザーを取得し、失敗した場合は何も表示しない', async () => {
     vi.stubGlobal('fetch', vi.fn().mockResolvedValue(new Response(null, { status: 401 })));
 
     const { container } = render(<AuthUser />);
