@@ -18,7 +18,6 @@ export const limitSchema = z.coerce.number().int().min(1).max(100).default(50);
 
 export const collectionSchema = z.object({
   collectionId: collectionIdSchema,
-  collectionArn: z.string().optional(),
   faceModelVersion: z.string().optional(),
   creationTimestamp: z.string().datetime().optional(),
   faceCount: z.number().int().nonnegative().optional(),

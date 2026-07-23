@@ -37,7 +37,6 @@
                             "maxLength": 255,
                             "pattern": "^[a-zA-Z0-9_.-]+$"
                           },
-                          "collectionArn": { "type": "string" },
                           "faceModelVersion": { "type": "string" },
                           "creationTimestamp": {
                             "type": "string",
@@ -192,7 +191,6 @@
                       "maxLength": 255,
                       "pattern": "^[a-zA-Z0-9_.-]+$"
                     },
-                    "collectionArn": { "type": "string" },
                     "faceModelVersion": { "type": "string" },
                     "creationTimestamp": {
                       "type": "string",
@@ -347,7 +345,6 @@
                       "maxLength": 255,
                       "pattern": "^[a-zA-Z0-9_.-]+$"
                     },
-                    "collectionArn": { "type": "string" },
                     "faceModelVersion": { "type": "string" },
                     "creationTimestamp": {
                       "type": "string",

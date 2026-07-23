@@ -97,7 +97,6 @@ export class AwsRekognitionRepository implements RekognitionRepository {
       this.client.send(new DescribeCollectionCommand({ CollectionId: collectionId })),
     );
     const collection: Collection = { collectionId };
-    if (response.CollectionARN) collection.collectionArn = response.CollectionARN;
     if (response.FaceModelVersion) collection.faceModelVersion = response.FaceModelVersion;
     if (response.CreationTimestamp)
       collection.creationTimestamp = response.CreationTimestamp.toISOString();
