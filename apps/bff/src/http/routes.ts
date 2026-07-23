@@ -1,5 +1,6 @@
 import {
   associateFacesRequestSchema,
+  associateFacesResponseSchema,
   collectionIdSchema,
   collectionListQuerySchema,
   collectionListResponseSchema,
@@ -18,8 +19,8 @@ import {
   userListQuerySchema,
   userListResponseSchema,
 } from '@rekognition-manager/contracts';
-import { zValidator } from '@hono/zod-validator';
 import { Hono } from 'hono';
+import { validator as zValidator } from 'hono-openapi';
 import { z } from 'zod';
 
 import { InvalidInputError } from '../application/errors.js';
@@ -27,6 +28,13 @@ import type { Logger } from '../application/logger.js';
 import type { RekognitionService } from '../application/rekognition-service.js';
 import type { AppEnv } from './types.js';
 import { validationHook } from './validation.js';
+import {
+  apiRoute,
+  imageSearchRequest,
+  imageUploadRequest,
+  jsonResponse,
+  noContentResponse,
+} from './openapi.js';
 
 const collectionParamsSchema = z.object({ collectionId: collectionIdSchema });
 const userParamsSchema = z.object({ collectionId: collectionIdSchema, userId: userIdSchema });
@@ -47,6 +55,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections',
+    apiRoute({
+      operationId: 'listCollections',
+      summary: 'コレクション一覧を取得する',
+      tags: ['Collections'],
+      responses: { 200: jsonResponse('コレクション一覧', collectionListResponseSchema) },
+    }),
     zValidator('query', collectionListQuerySchema, validationHook),
     async (context) => {
       const { limit, cursor } = context.req.valid('query');
@@ -57,6 +71,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.post(
     '/collections',
+    apiRoute({
+      operationId: 'createCollection',
+      summary: 'コレクションを作成する',
+      tags: ['Collections'],
+      responses: { 201: jsonResponse('作成したコレクション', collectionSchema) },
+    }),
     zValidator('json', createCollectionRequestSchema, validationHook),
     async (context) => {
       const { collectionId } = context.req.valid('json');
@@ -67,6 +87,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections/:collectionId',
+    apiRoute({
+      operationId: 'getCollection',
+      summary: 'コレクション詳細を取得する',
+      tags: ['Collections'],
+      responses: { 200: jsonResponse('コレクション詳細', collectionSchema) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     async (context) => {
       const { collectionId } = context.req.valid('param');
@@ -77,6 +103,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.delete(
     '/collections/:collectionId',
+    apiRoute({
+      operationId: 'deleteCollection',
+      summary: 'コレクションを削除する',
+      tags: ['Collections'],
+      responses: { 204: noContentResponse },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     async (context) => {
       const { collectionId } = context.req.valid('param');
@@ -87,6 +119,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections/:collectionId/users',
+    apiRoute({
+      operationId: 'listUsers',
+      summary: 'ユーザー一覧を取得する',
+      tags: ['Users'],
+      responses: { 200: jsonResponse('ユーザー一覧', userListResponseSchema) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     zValidator('query', userListQuerySchema, validationHook),
     async (context) => {
@@ -103,6 +141,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.post(
     '/collections/:collectionId/users',
+    apiRoute({
+      operationId: 'createUser',
+      summary: 'ユーザーを作成する',
+      tags: ['Users'],
+      responses: { 201: jsonResponse('作成したユーザー', userDetailResponseSchema.shape.user) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     zValidator('json', createUserRequestSchema, validationHook),
     async (context) => {
@@ -115,6 +159,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections/:collectionId/users/:userId',
+    apiRoute({
+      operationId: 'getUser',
+      summary: 'ユーザー詳細を取得する',
+      tags: ['Users'],
+      responses: { 200: jsonResponse('ユーザー詳細', userDetailResponseSchema) },
+    }),
     zValidator('param', userParamsSchema, validationHook),
     async (context) => {
       const { collectionId, userId } = context.req.valid('param');
@@ -125,6 +175,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.delete(
     '/collections/:collectionId/users/:userId',
+    apiRoute({
+      operationId: 'deleteUser',
+      summary: 'ユーザーを削除する',
+      tags: ['Users'],
+      responses: { 204: noContentResponse },
+    }),
     zValidator('param', userParamsSchema, validationHook),
     async (context) => {
       const { collectionId, userId } = context.req.valid('param');
@@ -135,6 +191,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.post(
     '/collections/:collectionId/users/:userId/faces',
+    apiRoute({
+      operationId: 'associateFaces',
+      summary: '顔をユーザーへ関連付ける',
+      tags: ['Users', 'Faces'],
+      responses: { 200: jsonResponse('関連付け結果', associateFacesResponseSchema) },
+    }),
     zValidator('param', userParamsSchema, validationHook),
     zValidator('json', associateFacesRequestSchema, validationHook),
     async (context) => {
@@ -152,6 +214,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.delete(
     '/collections/:collectionId/users/:userId/faces/:faceId',
+    apiRoute({
+      operationId: 'disassociateFace',
+      summary: '顔とユーザーの関連付けを解除する',
+      tags: ['Users', 'Faces'],
+      responses: { 204: noContentResponse },
+    }),
     zValidator('param', associationParamsSchema, validationHook),
     async (context) => {
       const { collectionId, userId, faceId } = context.req.valid('param');
@@ -162,6 +230,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections/:collectionId/faces',
+    apiRoute({
+      operationId: 'listFaces',
+      summary: '顔一覧を取得する',
+      tags: ['Faces'],
+      responses: { 200: jsonResponse('顔一覧', faceListResponseSchema) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     zValidator('query', faceListQuerySchema, validationHook),
     async (context) => {
@@ -179,6 +253,13 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.post(
     '/collections/:collectionId/faces',
+    apiRoute({
+      operationId: 'registerFace',
+      summary: '顔を登録する',
+      tags: ['Faces'],
+      requestBody: imageUploadRequest,
+      responses: { 201: jsonResponse('顔登録結果', registerFaceResponseSchema) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     async (context) => {
       const { collectionId } = context.req.valid('param');
@@ -211,6 +292,13 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.post(
     '/collections/:collectionId/search/users-by-image',
+    apiRoute({
+      operationId: 'searchUsersByImage',
+      summary: '画像からユーザーを検索する',
+      tags: ['Search'],
+      requestBody: imageSearchRequest,
+      responses: { 200: jsonResponse('検索結果', searchUsersByImageResponseSchema) },
+    }),
     zValidator('param', collectionParamsSchema, validationHook),
     async (context) => {
       const { collectionId } = context.req.valid('param');
@@ -241,6 +329,20 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.get(
     '/collections/:collectionId/faces/:faceId/image',
+    apiRoute({
+      operationId: 'getFaceImage',
+      summary: '顔画像を取得する',
+      tags: ['Faces'],
+      responses: {
+        200: {
+          description: '顔画像',
+          content: {
+            'image/jpeg': { schema: { type: 'string', format: 'binary' } },
+            'image/png': { schema: { type: 'string', format: 'binary' } },
+          },
+        },
+      },
+    }),
     zValidator('param', faceParamsSchema, validationHook),
     async (context) => {
       const { collectionId, faceId } = context.req.valid('param');
@@ -257,6 +359,12 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
 
   api.delete(
     '/collections/:collectionId/faces/:faceId',
+    apiRoute({
+      operationId: 'deleteFace',
+      summary: '顔を削除する',
+      tags: ['Faces'],
+      responses: { 204: noContentResponse },
+    }),
     zValidator('param', faceParamsSchema, validationHook),
     async (context) => {
       const { collectionId, faceId } = context.req.valid('param');

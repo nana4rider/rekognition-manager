@@ -33,6 +33,9 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Check OpenAPI document
+        run: npm run openapi:check
+
       - name: Run tests
         run: npm test
 
