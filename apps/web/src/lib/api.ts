@@ -1,6 +1,8 @@
 import { errorResponseSchema, type ErrorResponse } from '@rekognition-manager/contracts';
 import type { z } from 'zod';
 
+import { redirectToSignIn } from './auth-navigation';
+
 export class ApiError extends Error {
   constructor(
     message: string,
@@ -31,6 +33,7 @@ export async function apiRequest<T>(
   });
   const body: unknown = response.status === 204 ? null : await response.json().catch(() => null);
   if (!response.ok) {
+    if (response.status === 401) redirectToSignIn();
     const error = readError(body);
     throw new ApiError(
       error?.error.message ?? 'APIの呼び出しに失敗しました',
@@ -45,6 +48,7 @@ export async function apiRequest<T>(
 export async function apiDelete(path: string): Promise<void> {
   const response = await fetch(path, { method: 'DELETE' });
   if (!response.ok) {
+    if (response.status === 401) redirectToSignIn();
     const body: unknown = await response.json().catch(() => null);
     const error = readError(body);
     throw new ApiError(
