@@ -20,4 +20,33 @@ describe('ConfirmDialog', () => {
     fireEvent.click(screen.getByRole('button', { name: '削除する' }));
     expect(onConfirm).toHaveBeenCalledOnce();
   });
+
+  it('閉じるアニメーション中は直前のメッセージを維持する', () => {
+    const { rerender } = render(
+      <ConfirmDialog
+        open
+        title="ユーザーを削除"
+        message="ユーザー「test-user」を削除します。この操作は元に戻せません。"
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    rerender(
+      <ConfirmDialog
+        open={false}
+        title="ユーザーを削除"
+        message="ユーザー「」を削除します。この操作は元に戻せません。"
+        onCancel={vi.fn()}
+        onConfirm={vi.fn()}
+      />,
+    );
+
+    expect(
+      screen.getByText('ユーザー「test-user」を削除します。この操作は元に戻せません。'),
+    ).toBeInTheDocument();
+    expect(
+      screen.queryByText('ユーザー「」を削除します。この操作は元に戻せません。'),
+    ).not.toBeInTheDocument();
+  });
 });
