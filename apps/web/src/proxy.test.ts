@@ -1,8 +1,9 @@
 import { NextRequest } from 'next/server';
+import { unstable_doesMiddlewareMatch } from 'next/experimental/testing/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { getAuthStatus } from './lib/auth-status';
-import { proxy } from './proxy';
+import { config, proxy } from './proxy';
 
 vi.mock('./lib/auth-status', () => ({
   getAuthStatus: vi.fn(),
@@ -16,6 +17,39 @@ beforeEach(() => {
 });
 
 describe('Web ProxyのOIDC制御', () => {
+  it.each(['/health', '/ready'])('%sはOIDC制御の対象外にする', (path) => {
+    expect(unstable_doesMiddlewareMatch({ config, url: `http://localhost:3000${path}` })).toBe(
+      false,
+    );
+  });
+
+  it.each(['/', '/collections', '/collections/example/users'])(
+    '%sはOIDC制御の対象にする',
+    (path) => {
+      expect(unstable_doesMiddlewareMatch({ config, url: `http://localhost:3000${path}` })).toBe(
+        true,
+      );
+    },
+  );
+
+  it.each(['/api/v1/collections', '/auth/sign-in', '/favicon.ico'])(
+    '%sはOIDC制御の対象外にする',
+    (path) => {
+      expect(unstable_doesMiddlewareMatch({ config, url: `http://localhost:3000${path}` })).toBe(
+        false,
+      );
+    },
+  );
+
+  it('追加したトップレベル画面は明示的にmatcherへ追加する', () => {
+    expect(
+      unstable_doesMiddlewareMatch({
+        config,
+        url: 'http://localhost:3000/example',
+      }),
+    ).toBe(false);
+  });
+
   it('OIDC有効かつセッションなしならログインへリダイレクトする', async () => {
     getAuthStatusMock.mockResolvedValue({
       enabled: true,
