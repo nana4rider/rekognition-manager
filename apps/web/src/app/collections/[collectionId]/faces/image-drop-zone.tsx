@@ -17,7 +17,7 @@ export function ImageDropZone({
   disabled = false,
   onSelect,
   ariaLabel = '顔画像を選択',
-  emptyLabel = '画像をドラッグ＆ドロップ',
+  emptyLabel = '画像をドラッグ&ドロップ',
 }: ImageDropZoneProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [dragging, setDragging] = useState(false);
@@ -90,7 +90,7 @@ export function ImageDropZone({
         <AddPhotoAlternateIcon color={dragging ? 'primary' : 'inherit'} />
         <Typography sx={{ fontWeight: 500 }}>{file?.name ?? emptyLabel}</Typography>
         <Typography variant="body2" color="text.secondary">
-          またはクリックして選択(JPEG／PNG、5MB以下)
+          またはクリックして選択(JPEG/PNG、5MB以下)
         </Typography>
       </Stack>
     </Box>

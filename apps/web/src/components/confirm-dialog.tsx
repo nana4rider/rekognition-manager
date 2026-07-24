@@ -1,5 +1,7 @@
 'use client';
 
+import { useLayoutEffect, useState } from 'react';
+
 import {
   Button,
   Dialog,
@@ -24,11 +26,19 @@ export function ConfirmDialog({
   onCancel: () => void;
   onConfirm: () => void;
 }) {
+  const [displayedContent, setDisplayedContent] = useState({ title, message });
+
+  useLayoutEffect(() => {
+    if (open) {
+      setDisplayedContent({ title, message });
+    }
+  }, [message, open, title]);
+
   return (
     <Dialog open={open} onClose={busy ? undefined : onCancel} maxWidth="xs" fullWidth>
-      <DialogTitle>{title}</DialogTitle>
+      <DialogTitle>{displayedContent.title}</DialogTitle>
       <DialogContent>
-        <DialogContentText>{message}</DialogContentText>
+        <DialogContentText>{displayedContent.message}</DialogContentText>
       </DialogContent>
       <DialogActions>
         <Button onClick={onCancel} disabled={busy}>
