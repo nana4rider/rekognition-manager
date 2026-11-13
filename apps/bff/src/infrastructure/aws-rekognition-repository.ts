@@ -29,6 +29,7 @@ import type {
   User,
 } from '@rekognition-manager/contracts';
 
+import { ResourceConflictError, ResourceNotFoundError } from '../application/errors.js';
 import type { Logger } from '../application/logger.js';
 import type {
   Page,
@@ -267,9 +268,23 @@ export class AwsRekognitionRepository implements RekognitionRepository {
   }
 
   async deleteFace(collectionId: string, faceId: string): Promise<void> {
-    await this.execute('DeleteFaces', () =>
+    const response = await this.execute('DeleteFaces', () =>
       this.client.send(new DeleteFacesCommand({ CollectionId: collectionId, FaceIds: [faceId] })),
     );
+    const failedDeletion = response.UnsuccessfulFaceDeletions?.find(
+      (deletion) => deletion.FaceId === faceId,
+    );
+    if (failedDeletion) {
+      if (failedDeletion.Reasons?.includes('ASSOCIATED_TO_AN_EXISTING_USER')) {
+        throw new ResourceConflictError(
+          'この顔はユーザーに関連付けられているため削除できません。先にユーザー詳細画面で関連付けを解除してください',
+        );
+      }
+      if (failedDeletion.Reasons?.includes('FACE_NOT_FOUND')) {
+        throw new ResourceNotFoundError('指定した顔が見つかりません');
+      }
+      throw new ResourceConflictError('顔を削除できませんでした');
+    }
     if (!this.s3Client || !this.imageBucketName) return;
     const bucketName = this.imageBucketName;
     if (!bucketName) return;
