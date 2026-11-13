@@ -1,6 +1,6 @@
 {
   "name": "rekognition-manager",
-  "version": "0.11.0",
+  "version": "0.12.0",
   "author": "nana4rider",
   "license": "ISC",
   "private": true,
@@ -23,7 +23,7 @@
     "typecheck": "npm run build --workspace @rekognition-manager/contracts && npm run typecheck --workspaces --if-present",
     "test": "npm run test --workspaces --if-present",
     "check:push": "npm run typecheck && npm test",
-    "prepare": "npm run build --workspace @rekognition-manager/contracts && husky"
+    "prepare": "npm run build --workspace @rekognition-manager/contracts && (lefthook install || true)"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
@@ -32,14 +32,14 @@
     "eslint": "^10.13.0",
     "eslint-config-prettier": "^10.1.8",
     "globals": "^17.13.0",
-    "husky": "^9.1.7",
-    "lint-staged": "^17.6.0",
+    "lefthook": "^2.2.2",
     "prettier": "^3.9.10",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   },
   "allowScripts": {
-    "esbuild": true
+    "esbuild": true,
+    "lefthook": true
   }
 }
