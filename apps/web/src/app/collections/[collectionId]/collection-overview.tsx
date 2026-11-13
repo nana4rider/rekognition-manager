@@ -27,11 +27,17 @@ export function CollectionOverview({ collectionId }: { collectionId: string }) {
     ['顔の件数', collection.faceCount?.toLocaleString('ja-JP') ?? '—'],
     ['ユーザーの件数', collection.userCount?.toLocaleString('ja-JP') ?? '—'],
     ['顔モデル', collection.faceModelVersion ?? '—'],
+    [
+      '作成日時',
+      collection.creationTimestamp
+        ? new Date(collection.creationTimestamp).toLocaleString('ja-JP')
+        : '—',
+    ],
   ];
   return (
     <Grid container spacing={2}>
       {cards.map(([label, value]) => (
-        <Grid key={label} size={{ xs: 12, md: 4 }}>
+        <Grid key={label} size={{ xs: 12, md: 3 }}>
           <Card sx={{ border: 1, borderColor: 'divider', height: '100%' }}>
             <CardContent>
               <Typography color="text.secondary" variant="body2">

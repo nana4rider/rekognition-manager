@@ -133,14 +133,13 @@ export function CollectionsClient() {
             <TableRow>
               <TableCell>コレクションID</TableCell>
               <TableCell>モデルバージョン</TableCell>
-              <TableCell>作成日時</TableCell>
               <TableCell align="right">操作</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
             {!loading && items.length === 0 && (
               <TableRow>
-                <TableCell colSpan={4} align="center">
+                <TableCell colSpan={3} align="center">
                   <Typography color="text.secondary" sx={{ py: 5 }}>
                     コレクションはありません
                   </Typography>
@@ -158,11 +157,6 @@ export function CollectionsClient() {
                   </Link>
                 </TableCell>
                 <TableCell>{item.faceModelVersion ?? '—'}</TableCell>
-                <TableCell>
-                  {item.creationTimestamp
-                    ? new Date(item.creationTimestamp).toLocaleString('ja-JP')
-                    : '—'}
-                </TableCell>
                 <TableCell align="right">
                   <Tooltip title="削除">
                     <IconButton
