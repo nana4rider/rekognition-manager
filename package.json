@@ -1,6 +1,6 @@
 {
   "name": "rekognition-manager",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "author": "nana4rider",
   "license": "ISC",
   "private": true,
@@ -26,16 +26,20 @@
     "prepare": "npm run build --workspace @rekognition-manager/contracts && husky"
   },
   "devDependencies": {
-    "@eslint/js": "9.31.0",
-    "@types/node": "26.1.1",
-    "concurrently": "9.2.0",
-    "eslint": "9.31.0",
-    "eslint-config-prettier": "10.1.8",
-    "globals": "16.3.0",
-    "husky": "9.1.7",
-    "lint-staged": "17.2.0",
-    "prettier": "3.6.2",
-    "typescript": "5.8.3",
-    "typescript-eslint": "8.38.0"
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^26.6.6",
+    "concurrently": "^10.0.6",
+    "eslint": "^10.13.0",
+    "eslint-config-prettier": "^10.1.8",
+    "globals": "^17.13.0",
+    "husky": "^9.1.7",
+    "lint-staged": "^17.6.0",
+    "prettier": "^3.9.10",
+    "typescript": "^5.9.3",
+    "typescript-eslint": "^8.72.1",
+    "vitest": "^5.0.5"
+  },
+  "allowScripts": {
+    "esbuild": true
   }
 }

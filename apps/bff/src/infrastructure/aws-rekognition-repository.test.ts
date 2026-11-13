@@ -1,4 +1,4 @@
-import { PutObjectCommand } from '@aws-sdk/client-s3';
+import { DeleteObjectCommand, PutObjectCommand } from '@aws-sdk/client-s3';
 import {
   DeleteFacesCommand,
   IndexFacesCommand,
@@ -103,7 +103,35 @@ describe('AwsRekognitionRepository', () => {
 
     await repository.deleteFace('employees', 'face-123');
 
-    expect(send).toHaveBeenCalled();
+    expect(send.mock.calls[0]?.[0]).toBeInstanceOf(DeleteFacesCommand);
+    expect(send.mock.calls[1]?.[0]).toBeInstanceOf(DeleteObjectCommand);
+  });
+
+  it('ユーザーに関連付けられた顔の削除失敗をエラーとして返し、画像を残す', async () => {
+    const rekognitionSend = vi.fn().mockResolvedValue({
+      UnsuccessfulFaceDeletions: [
+        {
+          FaceId: 'face-123',
+          UserId: 'user-001',
+          Reasons: ['ASSOCIATED_TO_AN_EXISTING_USER'],
+        },
+      ],
+    });
+    const s3Send = vi.fn().mockResolvedValue({});
+    const repository = new AwsRekognitionRepository(
+      { send: rekognitionSend } as unknown as RekognitionClient,
+      logger,
+      { send: s3Send } as unknown as never,
+      'face-images',
+    );
+
+    const deletion = repository.deleteFace('employees', 'face-123');
+    await expect(deletion).rejects.toMatchObject({
+      code: 'RESOURCE_CONFLICT',
+      status: 409,
+    });
+    await expect(deletion).rejects.toThrow('関連付けを解除');
+    expect(s3Send).not.toHaveBeenCalled();
   });
 
   it('画像検索結果をアプリケーション形式へ変換する', async () => {

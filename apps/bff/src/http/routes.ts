@@ -350,7 +350,7 @@ export function createApiRoutes(createService: ServiceFactory): Hono<AppEnv> {
       if (!image) {
         return context.body(null, 404);
       }
-      return context.body(image.body, 200, {
+      return context.body(new Uint8Array(image.body), 200, {
         'Content-Type': image.contentType,
         'Cache-Control': 'private, no-store',
       });

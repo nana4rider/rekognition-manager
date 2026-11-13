@@ -1,9 +1,10 @@
 {
   "name": "@rekognition-manager/web",
-  "version": "0.10.0",
+  "version": "0.11.0",
   "author": "nana4rider",
   "license": "ISC",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "next dev --port 3000",
     "build": "next build",
@@ -12,25 +13,24 @@
     "test": "vitest run"
   },
   "dependencies": {
-    "@emotion/cache": "11.14.0",
-    "@emotion/react": "11.14.0",
-    "@emotion/styled": "11.14.1",
-    "@mui/icons-material": "9.2.0",
-    "@mui/material": "9.2.0",
-    "@mui/material-nextjs": "9.1.1",
+    "@emotion/cache": "^11.14.0",
+    "@emotion/react": "^11.14.0",
+    "@emotion/styled": "^11.14.1",
+    "@mui/icons-material": "^9.5.0",
+    "@mui/material": "^9.5.0",
+    "@mui/material-nextjs": "^9.5.0",
     "@rekognition-manager/contracts": "*",
-    "next": "16.2.10",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
-    "zod": "4.0.10"
+    "next": "^16.4.3",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@testing-library/jest-dom": "6.6.4",
-    "@testing-library/react": "16.3.0",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3",
-    "@vitejs/plugin-react": "6.0.3",
-    "jsdom": "26.1.0",
-    "vitest": "4.1.10"
+    "@testing-library/jest-dom": "^7.0.1",
+    "@testing-library/react": "^16.3.3",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "@vitejs/plugin-react": "^6.1.2",
+    "jsdom": "^30.1.3"
   }
 }

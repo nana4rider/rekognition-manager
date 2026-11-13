@@ -211,10 +211,21 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
                       <VisibilityIcon />
                     </IconButton>
                   </Tooltip>
-                  <Tooltip title="削除">
-                    <IconButton color="error" onClick={() => setDeleteTarget(face)}>
-                      <DeleteOutlineIcon />
-                    </IconButton>
+                  <Tooltip
+                    title={
+                      face.userId ? 'ユーザーとの関連付けを解除してから削除してください' : '削除'
+                    }
+                  >
+                    <span>
+                      <IconButton
+                        color="error"
+                        disabled={Boolean(face.userId)}
+                        aria-label={`Face ID ${face.faceId}を削除`}
+                        onClick={() => setDeleteTarget(face)}
+                      >
+                        <DeleteOutlineIcon />
+                      </IconButton>
+                    </span>
                   </Tooltip>
                 </TableCell>
               </TableRow>
@@ -287,7 +298,7 @@ export function FacesClient({ collectionId }: { collectionId: string }) {
       <ConfirmDialog
         open={Boolean(deleteTarget)}
         title="顔を削除"
-        message={`Face ID「${deleteTarget?.faceId ?? ''}」を削除します。ユーザーとの関連付けも失われ、元に戻せません。`}
+        message={`Face ID「${deleteTarget?.faceId ?? ''}」の顔情報と保存画像を削除します。この操作は元に戻せません。`}
         busy={busy}
         onCancel={() => setDeleteTarget(undefined)}
         onConfirm={() => void deleteFace()}

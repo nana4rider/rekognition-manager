@@ -14,7 +14,7 @@ export function mapAwsError(error: unknown): ApplicationError {
     return new ApplicationError('AWS_ERROR', 'AWSサービスの呼び出しに失敗しました', 502);
   }
 
-  const awsError = error as AwsLikeError;
+  const awsError: AwsLikeError = error;
   switch (awsError.name) {
     case 'ResourceNotFoundException':
       return new ResourceNotFoundError('指定したAWSリソースが見つかりません', { cause: error });
