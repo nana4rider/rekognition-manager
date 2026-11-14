@@ -1,11 +1,11 @@
 {
   "name": "rekognition-manager",
-  "version": "0.12.0",
+  "version": "0.12.1",
   "author": "nana4rider",
   "license": "ISC",
   "private": true,
   "engines": {
-    "node": ">=24.0.0",
+    "node": ">=26.0.0",
     "npm": ">=11.0.0"
   },
   "workspaces": [
@@ -34,12 +34,13 @@
     "globals": "^17.13.0",
     "lefthook": "^2.2.2",
     "prettier": "^3.9.10",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "typescript-eslint": "^8.72.1",
     "vitest": "^5.0.5"
   },
   "allowScripts": {
     "esbuild": true,
+    "fsevents": true,
     "lefthook": true
   }
 }

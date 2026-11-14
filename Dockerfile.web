@@ -1,4 +1,4 @@
-FROM node:24-alpine AS dependencies
+FROM node:26-alpine AS dependencies
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY apps/bff/package.json apps/bff/package.json
@@ -15,7 +15,7 @@ COPY packages/contracts packages/contracts
 RUN npm run build --workspace @rekognition-manager/contracts
 RUN npm run build --workspace @rekognition-manager/web
 
-FROM node:24-alpine AS runner
+FROM node:26-alpine AS runner
 ENV NODE_ENV=production
 ENV BFF_ORIGIN=http://bff:3001
 ENV HOSTNAME=0.0.0.0
